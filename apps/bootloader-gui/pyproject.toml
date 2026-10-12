@@ -1,0 +1,18 @@
+[project]
+name = "bootloader-gui"
+version = "0.1.0"
+description = "Interactive Bootloader Configuration and Kernel Argument manager for GRUB and systemd-boot"
+requires-python = ">=3.12"
+dependencies = [
+    "linux-gui-core",
+]
+
+[project.scripts]
+bootloader-gui = "bootloader_gui.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bootloader_gui"]

@@ -1,0 +1,18 @@
+[project]
+name = "usermgmt-gui"
+version = "0.1.0"
+description = "Interactive Linux user and group manager with permission tooltips and command preview"
+requires-python = ">=3.12"
+dependencies = [
+    "linux-gui-core",
+]
+
+[project.scripts]
+usermgmt-gui = "usermgmt_gui.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/usermgmt_gui"]

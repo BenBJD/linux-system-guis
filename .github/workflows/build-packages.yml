@@ -1,0 +1,146 @@
+name: Build Packages
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-wheels:
+    name: Build Python Wheels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Install build tools
+        run: uv add --dev build
+
+      - name: Build wheels
+        run: |
+          mkdir -p dist
+          uv run python -m build --wheel --outdir dist packages/core
+          for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui; do
+            uv run python -m build --wheel --outdir dist "apps/$app"
+          done
+
+      - name: Upload Wheels Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels
+          path: dist/*.whl
+
+  build-arch:
+    name: Build Arch Linux Package
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install Arch build dependencies
+        run: |
+          pacman -Syu --noconfirm base-devel python python-build python-installer python-wheel python-hatchling python-pyqt6 polkit git sudo
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up non-root build user
+        run: |
+          useradd -m -G wheel builder
+          echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder .
+
+      - name: Build package with makepkg
+        run: |
+          su builder -c "./packaging/build_arch.sh"
+
+      - name: Upload Arch Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: packaging/arch/*.pkg.tar.zst
+
+  build-deb:
+    name: Build Debian/Ubuntu Package (.deb)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Debian packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debhelper dh-python python3-all python3-pyqt6 python3-build python3-installer python3-wheel python3-hatchling dpkg-dev build-essential
+
+      - name: Build .deb package
+        run: |
+          ./packaging/build_deb.sh
+          mkdir -p dist-deb
+          cp ../linux-system-guis_*.deb dist-deb/ 2>/dev/null || cp *.deb dist-deb/ 2>/dev/null || true
+
+      - name: Upload Debian Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: dist-deb/*.deb
+
+  build-rpm:
+    name: Build Fedora/RPM Package (.rpm)
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - name: Install Fedora packaging dependencies
+        run: |
+          dnf install -y rpm-build python3-devel python3-pip python3-wheel python3-hatchling python3-installer python3-build git tar
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build .rpm package
+        run: |
+          ./packaging/build_rpm.sh
+
+      - name: Upload RPM Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-package
+          path: build/rpmbuild/RPMS/noarch/*.rpm
+
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-wheels, build-arch, build-deb, build-rpm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-artifacts/arch-package/*.pkg.tar.zst
+            release-artifacts/debian-package/*.deb
+            release-artifacts/rpm-package/*.rpm
+            release-artifacts/python-wheels/*.whl
+          generate_release_notes: true

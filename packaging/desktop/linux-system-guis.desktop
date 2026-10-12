@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Linux System GUIs
+Comment=Educational, transparent desktop administration suite for Linux
+Exec=linux-system-guis
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;Settings;Administration;
+Keywords=system;admin;fstab;udev;systemd;sudoers;journal;sysctl;permissions;bootloader;
+StartupNotify=true

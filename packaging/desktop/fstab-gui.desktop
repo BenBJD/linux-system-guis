@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=fstab Editor
+Comment=Visual filesystem mount manager (/etc/fstab) with live syntax preview
+Exec=fstab-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;Filesystem;Settings;
+StartupNotify=true

@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+export PYBUILD_NAME=linux-system-guis
+
+%:
+	dh $@ --with python3
+
+override_dh_auto_build:
+	mkdir -p debian/dist
+	python3 -m build --wheel --no-isolation --outdir debian/dist packages/core
+	for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui; do \
+		python3 -m build --wheel --no-isolation --outdir debian/dist apps/$$app ; \
+	done
+
+override_dh_auto_install:
+	python3 debian/install_wheels.py debian/linux-system-guis debian/dist
+	if [ -d debian/linux-system-guis/usr/local ]; then \
+		cp -r debian/linux-system-guis/usr/local/* debian/linux-system-guis/usr/ 2>/dev/null || true ; \
+		rm -rf debian/linux-system-guis/usr/local ; \
+	fi
+	install -dm755 debian/linux-system-guis/usr/share/applications
+	install -m644 packaging/desktop/*.desktop debian/linux-system-guis/usr/share/applications/
+	install -dm755 debian/linux-system-guis/usr/share/icons/hicolor/scalable/apps
+	install -m644 packaging/desktop/icons/linux-system-guis.svg debian/linux-system-guis/usr/share/icons/hicolor/scalable/apps/linux-system-guis.svg
+
+override_dh_auto_clean:
+	rm -rf debian/dist debian/linux-system-guis
+	dh_auto_clean

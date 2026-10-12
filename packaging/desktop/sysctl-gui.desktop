@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Kernel Parameters (sysctl)
+Comment=Inspect and tune live and persistent kernel sysctl parameters
+Exec=sysctl-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;Settings;
+StartupNotify=true

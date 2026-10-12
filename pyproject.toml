@@ -1,0 +1,66 @@
+[project]
+name = "linux-system-guis"
+version = "0.1.0"
+description = "A suite of educational, safe desktop GUIs for low-level Linux administration"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pyqt6>=6.7.0",
+    "linux-gui-core",
+    "fstab-gui",
+    "udev-gui",
+    "systemd-gui",
+    "usermgmt-gui",
+    "sudoers-gui",
+    "journal-gui",
+    "sysctl-gui",
+    "permissions-gui",
+    "bootloader-gui",
+    "linux-system-guis-launcher",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "packages/*",
+    "apps/*",
+]
+
+[tool.uv.sources]
+linux-gui-core = { workspace = true }
+fstab-gui = { workspace = true }
+udev-gui = { workspace = true }
+systemd-gui = { workspace = true }
+usermgmt-gui = { workspace = true }
+sudoers-gui = { workspace = true }
+journal-gui = { workspace = true }
+sysctl-gui = { workspace = true }
+permissions-gui = { workspace = true }
+bootloader-gui = { workspace = true }
+linux-system-guis-launcher = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "build>=1.6.1",
+    "installer>=1.0.1",
+    "pytest>=9.1.1",
+    "pytest-qt>=4.5.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [
+    "packages/core/src",
+    "apps/fstab-gui/src",
+    "apps/udev-gui/src",
+    "apps/systemd-gui/src",
+    "apps/usermgmt-gui/src",
+    "apps/sudoers-gui/src",
+    "apps/journal-gui/src",
+    "apps/sysctl-gui/src",
+    "apps/permissions-gui/src",
+    "apps/bootloader-gui/src",
+    "apps/launcher/src",
+]

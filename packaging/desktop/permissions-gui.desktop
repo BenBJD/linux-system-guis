@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Advanced File Permissions
+Comment=POSIX Access Control Lists (ACLs) and extended file attributes (chattr)
+Exec=permissions-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;FileTools;Settings;
+StartupNotify=true

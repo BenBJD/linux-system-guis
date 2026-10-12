@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=systemd Manager
+Comment=Service and timer explorer with friendly status translations
+Exec=systemd-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;Monitor;Settings;
+StartupNotify=true

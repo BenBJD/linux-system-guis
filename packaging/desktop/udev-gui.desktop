@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=udev Rule Builder
+Comment=Interactive device rules manager for /etc/udev/rules.d/
+Exec=udev-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;HardwareSettings;Settings;
+StartupNotify=true

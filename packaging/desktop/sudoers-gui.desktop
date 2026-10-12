@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Sudoers Configuration
+Comment=Configure /etc/sudoers and /etc/sudoers.d/ with visudo syntax safety
+Exec=sudoers-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;Security;Settings;
+StartupNotify=true

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e2e"/>
+      <stop offset="100%" stop-color="#11111b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#89b4fa"/>
+      <stop offset="100%" stop-color="#74c7ec"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded squircle -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bg)" stroke="#313244" stroke-width="4"/>
+  
+  <!-- Terminal Header Bar -->
+  <rect x="18" y="18" width="92" height="18" rx="6" fill="#313244"/>
+  <circle cx="28" cy="27" r="4" fill="#f38ba8"/>
+  <circle cx="40" cy="27" r="4" fill="#f9e2af"/>
+  <circle cx="52" cy="27" r="4" fill="#a6e3a1"/>
+  
+  <!-- Gear & Shield System emblem -->
+  <path d="M64 44 C48 44 40 54 40 68 C40 88 64 104 64 104 C64 104 88 88 88 68 C88 54 80 44 64 44 Z" fill="none" stroke="url(#accent)" stroke-width="5" stroke-linejoin="round"/>
+  
+  <!-- Prompt Symbol >_ inside shield -->
+  <path d="M54 62 L62 70 L54 78" fill="none" stroke="#a6e3a1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="68" y1="78" x2="76" y2="78" stroke="#cdd6f4" stroke-width="4" stroke-linecap="round"/>
+</svg>

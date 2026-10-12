@@ -1,0 +1,40 @@
+# JetBrains
+.idea
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.whl
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Arch Linux packaging
+packaging/arch/pkg/
+packaging/arch/src/
+packaging/arch/dist/
+packaging/arch/*.pkg.tar.*
+packaging/arch/*.tar.gz
+
+# Debian packaging
+debian/.debhelper/
+debian/linux-system-guis/
+debian/files
+debian/*.substvars
+debian/*.debhelper.log
+
+# RPM packaging
+build/rpmbuild/
+
+# Pytest & coverage cache
+.pytest_cache/
+.coverage
+htmlcov/

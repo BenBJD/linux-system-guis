@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Bootloader Configuration
+Comment=Configure GRUB and systemd-boot timeout, entries, and kernel arguments
+Exec=bootloader-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;Settings;
+StartupNotify=true

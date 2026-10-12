@@ -1,0 +1,27 @@
+[project]
+name = "linux-system-guis-launcher"
+version = "0.1.0"
+description = "Desktop hub and launcher for Linux System GUIs suite"
+requires-python = ">=3.12"
+dependencies = [
+    "linux-gui-core",
+    "fstab-gui",
+    "udev-gui",
+    "systemd-gui",
+    "usermgmt-gui",
+    "sudoers-gui",
+    "journal-gui",
+    "sysctl-gui",
+    "permissions-gui",
+    "bootloader-gui",
+]
+
+[project.scripts]
+linux-system-guis = "linux_system_guis.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/linux_system_guis"]

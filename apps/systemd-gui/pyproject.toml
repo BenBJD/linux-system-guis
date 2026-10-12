@@ -1,0 +1,18 @@
+[project]
+name = "systemd-gui"
+version = "0.1.0"
+description = "Interactive systemd service & timer manager with real-time command explanation"
+requires-python = ">=3.12"
+dependencies = [
+    "linux-gui-core",
+]
+
+[project.scripts]
+systemd-gui = "systemd_gui.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/systemd_gui"]

@@ -1,0 +1,30 @@
+Source: linux-system-guis
+Section: admin
+Priority: optional
+Maintainer: Ben Davison <benjdavison02@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-build,
+               python3-installer,
+               python3-wheel,
+               python3-hatchling
+Standards-Version: 4.6.2
+Homepage: https://github.com/BenBJD/linux-system-guis
+
+Package: linux-system-guis
+Architecture: all
+Depends: ${python3:Depends},
+         ${misc:Depends},
+         python3-pyqt6,
+         policykit-1 | polkitd
+Recommends: sudo,
+            systemd,
+            acl,
+            e2fsprogs,
+            grub-pc | grub-efi
+Description: Educational desktop administration suite for Linux
+ Low-level Linux administration tools with real-time command previews,
+ safety confirmations, and educational tooltips. Includes visual editors
+ for fstab, udev rules, systemd services & timers, user groups, sudoers,
+ journalctl, sysctl, POSIX ACLs, and bootloaders (GRUB & systemd-boot).
