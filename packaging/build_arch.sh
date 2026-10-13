@@ -20,15 +20,13 @@ TAR_NAME="linux-system-guis-${VERSION}.tar.gz"
 rm -rf pkg src dist *.pkg.tar.zst "$TAR_NAME"
 
 echo "==> Creating source archive $TAR_NAME from local tree..."
-# Archive from git if available, otherwise tar
-git -C "$ROOT_DIR" archive --format=tar.gz --prefix="linux-system-guis-${VERSION}/" HEAD -o "$SCRIPT_DIR/arch/$TAR_NAME" 2>/dev/null || {
-    tar --exclude='.git' --exclude='.venv' --exclude='packaging/arch/pkg' \
-        --exclude='packaging/arch/src' --exclude='packaging/arch/dist' \
-        --exclude='packaging/arch/*.pkg.tar.*' --exclude='build' \
-        --exclude='dist' \
-        -czf "$SCRIPT_DIR/arch/$TAR_NAME" \
-        --transform "s,^\.,linux-system-guis-${VERSION}," -C "$ROOT_DIR" .
-}
+# Create archive directly from local tree to include untracked/staged files during development
+tar --exclude='.git' --exclude='.venv' --exclude='packaging/arch/pkg' \
+    --exclude='packaging/arch/src' --exclude='packaging/arch/dist' \
+    --exclude='packaging/arch/*.pkg.tar.*' --exclude='build' \
+    --exclude='dist' \
+    -czf "$SCRIPT_DIR/arch/$TAR_NAME" \
+    --transform "s,^\.,linux-system-guis-${VERSION}," -C "$ROOT_DIR" .
 
 # Run makepkg
 makepkg -f --nodeps --skipchecksums

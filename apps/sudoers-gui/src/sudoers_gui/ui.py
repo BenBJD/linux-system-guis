@@ -37,6 +37,7 @@ from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog, generate_diff
 from linux_gui_core.widgets.tooltips import format_tooltip
 from sudoers_gui.parser import SudoersParser, SudoersRule
+from sudoers_gui.strings import tr
 
 
 class SudoersMainWindow(QMainWindow):
@@ -55,8 +56,8 @@ class SudoersMainWindow(QMainWindow):
     def __init__(self, target_dir: str = DEFAULT_DIR):
         super().__init__()
         self.target_dir = target_dir
-        self.setWindowTitle("Sudoers Privilege Manager (visudo safe)")
-        self.resize(1180, 820)
+        self.setWindowTitle(tr("window_title"))
+        self.resize(1280, 720)
         self.setMinimumSize(960, 680)
 
         self.current_file_path: str = ""
@@ -74,20 +75,20 @@ class SudoersMainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
 
         # 1. Top Live Preview Banner
         self.preview_banner = LivePreviewBanner(
-            title="Sudoers Config Syntax",
-            subtitle="Modifying permissions below live updates this rule string. Note: Root permissions are required to inspect system rules.",
+            title=tr("preview_title"),
+            subtitle=tr("preview_subtitle"),
         )
         self.preview_banner.diffRequested.connect(self._inspect_diff)
         layout.addWidget(self.preview_banner)
 
         # 2. File Selection Bar
         file_bar = QHBoxLayout()
-        file_bar.addWidget(QLabel("Sudoers File:"))
+        file_bar.addWidget(QLabel(tr("lbl_sudoers_file")))
         self.cmb_files = QComboBox()
         self.cmb_files.setMinimumWidth(280)
         self.cmb_files.currentIndexChanged.connect(self._on_file_selected)
@@ -96,41 +97,41 @@ class SudoersMainWindow(QMainWindow):
         self.package_badge = PackageOwnershipBadge()
         file_bar.addWidget(self.package_badge)
 
-        self.btn_unlock_read = QPushButton("🔓 Read as Root")
+        self.btn_unlock_read = QPushButton(tr("btn_unlock_read"))
         self.btn_unlock_read.setToolTip(format_tooltip(
-            "Batch Read as Root",
-            "pkexec python3",
-            "Prompts for root privileges once to load /etc/sudoers, scan all /etc/sudoers.d/ drop-in files, and read their contents.",
-            "Safe / Required for inspecting existing rules",
+            tr("tooltip_unlock_read_title"),
+            tr("tooltip_unlock_read_cmd"),
+            tr("tooltip_unlock_read_desc"),
+            tr("tooltip_unlock_read_safety"),
         ))
         self.btn_unlock_read.setVisible(False)
         self.btn_unlock_read.clicked.connect(self._read_all_with_root)
         file_bar.addWidget(self.btn_unlock_read)
 
-        btn_refresh_all = QPushButton("🔄 Refresh (Root)")
-        btn_refresh_all.setToolTip("Re-scan /etc/sudoers and all /etc/sudoers.d/ files to refresh contents.")
+        btn_refresh_all = QPushButton(tr("btn_refresh_all"))
+        btn_refresh_all.setToolTip(tr("tooltip_refresh_all"))
         btn_refresh_all.clicked.connect(self._read_all_with_root)
         file_bar.addWidget(btn_refresh_all)
 
-        btn_new_file = QPushButton("📄 New Drop-in File")
-        btn_new_file.setToolTip("Create a new rule file in /etc/sudoers.d/. Note: sudoers ignores files containing periods (.) or ending in ~.")
+        btn_new_file = QPushButton(tr("btn_new_file"))
+        btn_new_file.setToolTip(tr("tooltip_new_file"))
         btn_new_file.clicked.connect(self._create_new_dropin_file)
         file_bar.addWidget(btn_new_file)
 
-        self.btn_delete_file = QPushButton("🗑️ Delete Drop-in")
-        self.btn_delete_file.setToolTip("Permanently remove the currently selected drop-in file from /etc/sudoers.d/.")
+        self.btn_delete_file = QPushButton(tr("btn_delete_file"))
+        self.btn_delete_file.setToolTip(tr("tooltip_delete_file"))
         self.btn_delete_file.clicked.connect(self._delete_dropin_file)
         self.btn_delete_file.setEnabled(False)
         file_bar.addWidget(self.btn_delete_file)
 
         file_bar.addStretch()
 
-        btn_validate_syntax = QPushButton("🧪 Validate with visudo")
+        btn_validate_syntax = QPushButton(tr("btn_validate_syntax"))
         btn_validate_syntax.setToolTip(format_tooltip(
-            "Syntax Validation",
-            "visudo -c -f <file>",
-            "Performs strict syntax and parsing validation using the system visudo compiler before applying any changes.",
-            "Strongly Recommended",
+            tr("tooltip_validate_syntax_title"),
+            tr("tooltip_validate_syntax_cmd"),
+            tr("tooltip_validate_syntax_desc"),
+            tr("tooltip_validate_syntax_safety"),
         ))
         btn_validate_syntax.clicked.connect(self._validate_current_syntax)
         file_bar.addWidget(btn_validate_syntax)
@@ -143,19 +144,19 @@ class SudoersMainWindow(QMainWindow):
         # Tab 1: Visual Rule Builder
         builder_widget = QWidget()
         builder_layout = QVBoxLayout(builder_widget)
-        builder_layout.setContentsMargins(0, 8, 0, 0)
-        builder_layout.setSpacing(8)
+        builder_layout.setContentsMargins(0, 6, 0, 0)
+        builder_layout.setSpacing(6)
 
         splitter = QSplitter(Qt.Orientation.Vertical)
 
         # Rules Table
         self.table = QTableWidget(0, 5)
         self.table.setHorizontalHeaderLabels([
-            "Entity (User / Group)",
-            "Target Hosts",
-            "Run As Spec",
-            "Password Required?",
-            "Permitted Commands",
+            tr("col_entity"),
+            tr("col_hosts"),
+            tr("col_runas"),
+            tr("col_password_req"),
+            tr("col_commands"),
         ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
@@ -175,31 +176,31 @@ class SudoersMainWindow(QMainWindow):
 
         form_widget = QWidget()
         form_layout = QVBoxLayout(form_widget)
-        form_layout.setContentsMargins(4, 6, 4, 6)
-        form_layout.setSpacing(10)
+        form_layout.setContentsMargins(2, 4, 2, 4)
+        form_layout.setSpacing(6)
 
         # Privilege Subject Box
-        subject_group = QGroupBox("Privilege Subject (Who receives elevated access)")
+        subject_group = QGroupBox(tr("group_privilege_subject"))
         subject_grid = QGridLayout(subject_group)
-        subject_grid.setSpacing(8)
+        subject_grid.setSpacing(6)
 
-        self.rb_user = QRadioButton("Individual User")
-        self.rb_group = QRadioButton("Group (% prefix)")
+        self.rb_user = QRadioButton(tr("rb_user"))
+        self.rb_group = QRadioButton(tr("rb_group"))
         self.rb_group.setChecked(True)
         self.rb_user.toggled.connect(self._on_rule_modified)
         self.rb_group.toggled.connect(self._on_rule_modified)
         subject_grid.addWidget(self.rb_user, 0, 0)
         subject_grid.addWidget(self.rb_group, 0, 1)
 
-        subject_grid.addWidget(QLabel("Account or Group Name:"), 0, 2)
+        subject_grid.addWidget(QLabel(tr("lbl_account_name")), 0, 2)
         self.txt_entity = QLineEdit("wheel")
-        self.txt_entity.setPlaceholderText("e.g. wheel, sudo, alice, deployer")
+        self.txt_entity.setPlaceholderText(tr("placeholder_entity"))
         self.txt_entity.setToolTip(format_tooltip(
-            "Privilege Entity",
-            "group or username",
-            "The user account or system group granted sudo privileges.",
-            "Required",
-            "wheel (all administrators) or alice",
+            tr("tooltip_entity_title"),
+            tr("tooltip_entity_syntax"),
+            tr("tooltip_entity_desc"),
+            tr("tooltip_entity_impact"),
+            tr("tooltip_entity_example"),
         ))
         self.txt_entity.textChanged.connect(self._on_rule_modified)
         subject_grid.addWidget(self.txt_entity, 0, 3)
@@ -207,38 +208,38 @@ class SudoersMainWindow(QMainWindow):
         form_layout.addWidget(subject_group)
 
         # Execution Scope Box
-        scope_group = QGroupBox("Execution Scope (Hosts && Run-As User)")
+        scope_group = QGroupBox(tr("group_execution_scope"))
         scope_grid = QGridLayout(scope_group)
-        scope_grid.setSpacing(8)
+        scope_grid.setSpacing(6)
 
-        scope_grid.addWidget(QLabel("Hosts:"), 0, 0)
+        scope_grid.addWidget(QLabel(tr("lbl_hosts")), 0, 0)
         self.txt_hosts = QLineEdit("ALL")
         self.txt_hosts.setToolTip(format_tooltip(
-            "Host Specification",
-            "ALL",
-            "List of network hostnames where this rule applies. Almost always 'ALL' on desktop Linux workstations.",
-            "Standard: ALL",
+            tr("tooltip_hosts_title"),
+            tr("tooltip_hosts_syntax"),
+            tr("tooltip_hosts_desc"),
+            tr("tooltip_hosts_impact"),
         ))
         self.txt_hosts.textChanged.connect(self._on_rule_modified)
         scope_grid.addWidget(self.txt_hosts, 0, 1)
 
-        scope_grid.addWidget(QLabel("Run As User:"), 0, 2)
+        scope_grid.addWidget(QLabel(tr("lbl_runas_user")), 0, 2)
         self.txt_runas_user = QLineEdit("ALL")
         self.txt_runas_user.setToolTip(format_tooltip(
-            "Run-As Target User",
-            "(ALL) or (root)",
-            "The target user account that the command can be run as using sudo -u. Defaults to ALL.",
-            "Standard: ALL",
+            tr("tooltip_runas_user_title"),
+            tr("tooltip_runas_user_syntax"),
+            tr("tooltip_runas_user_desc"),
+            tr("tooltip_runas_user_impact"),
         ))
         self.txt_runas_user.textChanged.connect(self._on_rule_modified)
         scope_grid.addWidget(self.txt_runas_user, 0, 3)
 
-        scope_grid.addWidget(QLabel("Run As Group:"), 1, 2)
+        scope_grid.addWidget(QLabel(tr("lbl_runas_group")), 1, 2)
         self.txt_runas_group = QLineEdit("ALL")
         self.txt_runas_group.setToolTip(format_tooltip(
-            "Run-As Target Group",
-            "(:ALL)",
-            "Optional target group specification for sudo -g. Can be left blank or ALL.",
+            tr("tooltip_runas_group_title"),
+            tr("tooltip_runas_group_syntax"),
+            tr("tooltip_runas_group_desc"),
         ))
         self.txt_runas_group.textChanged.connect(self._on_rule_modified)
         scope_grid.addWidget(self.txt_runas_group, 1, 3)
@@ -246,40 +247,40 @@ class SudoersMainWindow(QMainWindow):
         form_layout.addWidget(scope_group)
 
         # Authentication & Commands Box
-        auth_group = QGroupBox("Authentication Policy && Allowed Commands")
+        auth_group = QGroupBox(tr("group_auth_commands"))
         auth_grid = QGridLayout(auth_group)
-        auth_grid.setSpacing(8)
+        auth_grid.setSpacing(6)
 
-        self.chk_nopasswd = QCheckBox("NOPASSWD (Allow executing without asking for user's password)")
+        self.chk_nopasswd = QCheckBox(tr("chk_nopasswd"))
         self.chk_nopasswd.setToolTip(format_tooltip(
-            "Passwordless Execution Tag",
-            "NOPASSWD: ...",
-            "Bypasses the sudo password prompt when this rule is invoked.<br><br><b>Security Warning:</b> Use with extreme caution. If this account is compromised, the attacker can execute root commands without needing the user password.",
-            "Critical Security Impact",
-            "NOPASSWD: /usr/bin/systemctl restart nginx",
+            tr("tooltip_nopasswd_title"),
+            tr("tooltip_nopasswd_syntax"),
+            tr("tooltip_nopasswd_desc"),
+            tr("tooltip_nopasswd_impact"),
+            tr("tooltip_nopasswd_example"),
         ))
         self.chk_nopasswd.toggled.connect(self._on_rule_modified)
         auth_grid.addWidget(self.chk_nopasswd, 0, 0, 1, 2)
 
-        auth_grid.addWidget(QLabel("Permitted Commands:"), 1, 0)
+        auth_grid.addWidget(QLabel(tr("lbl_commands")), 1, 0)
         self.txt_commands = QLineEdit("ALL")
-        self.txt_commands.setPlaceholderText("e.g. ALL or /usr/bin/systemctl restart nginx, /usr/bin/pacman -Syu")
+        self.txt_commands.setPlaceholderText(tr("placeholder_commands"))
         self.txt_commands.setToolTip(format_tooltip(
-            "Permitted Commands",
-            "ALL or /path/to/binary",
-            "Absolute paths to permitted commands, separated by commas. Use 'ALL' for unrestricted root commands.",
-            "Restricted paths recommended for specific tasks",
+            tr("tooltip_commands_title"),
+            tr("tooltip_commands_syntax"),
+            tr("tooltip_commands_desc"),
+            tr("tooltip_commands_impact"),
         ))
         self.txt_commands.textChanged.connect(self._on_rule_modified)
         auth_grid.addWidget(self.txt_commands, 1, 1, 1, 3)
 
         # Command presets bar
         preset_bar = QHBoxLayout()
-        preset_bar.addWidget(QLabel("Insert Preset:"))
+        preset_bar.addWidget(QLabel(tr("lbl_presets")))
         self.cmb_presets = QComboBox()
         for cmd_val, desc in self.COMMON_COMMAND_PRESETS:
             self.cmb_presets.addItem(f"{cmd_val} ({desc})", cmd_val)
-        btn_apply_preset = QPushButton("Insert Command")
+        btn_apply_preset = QPushButton(tr("btn_apply_preset"))
         btn_apply_preset.clicked.connect(self._apply_command_preset)
         preset_bar.addWidget(self.cmb_presets)
         preset_bar.addWidget(btn_apply_preset)
@@ -291,19 +292,16 @@ class SudoersMainWindow(QMainWindow):
         scroll.setWidget(form_widget)
         splitter.addWidget(scroll)
         builder_layout.addWidget(splitter)
-        self.tabs.addTab(builder_widget, "Visual Rule Builder")
+        self.tabs.addTab(builder_widget, tr("tab_visual_builder"))
 
         # Tab 2: Raw Sudoers Text Editor
         raw_widget = QWidget()
         raw_layout = QVBoxLayout(raw_widget)
-        raw_layout.setContentsMargins(8, 8, 8, 8)
+        raw_layout.setContentsMargins(6, 6, 6, 6)
         raw_layout.setSpacing(6)
 
-        lbl_raw_help = QLabel(
-            "<b>Full File View / Editor:</b> Displays all rules, comments, and Defaults directives. "
-            "You can edit the text directly here. All changes are validated with <code>visudo -c -f</code> prior to saving."
-        )
-        lbl_raw_help.setStyleSheet("color: #a6adc8; font-size: 12px;")
+        lbl_raw_help = QLabel(tr("lbl_raw_help"))
+        lbl_raw_help.setStyleSheet("color: #9498a1; font-size: 11px;")
         raw_layout.addWidget(lbl_raw_help)
 
         self.raw_editor = QPlainTextEdit()
@@ -312,31 +310,31 @@ class SudoersMainWindow(QMainWindow):
         font.setPointSize(11)
         self.raw_editor.setFont(font)
         self.raw_editor.setStyleSheet(
-            "QPlainTextEdit { background-color: #11111b; color: #cdd6f4; "
-            "border: 1px solid #313244; border-radius: 6px; padding: 8px; }"
+            "QPlainTextEdit { background-color: #18191c; color: #e3e5e8; "
+            "border: 1px solid #3a3d45; border-radius: 3px; padding: 6px; }"
         )
         self.raw_editor.textChanged.connect(self._on_raw_editor_text_changed)
         raw_layout.addWidget(self.raw_editor)
 
-        self.tabs.addTab(raw_widget, "📝 Raw File Editor / Comments")
+        self.tabs.addTab(raw_widget, tr("tab_raw_editor"))
         self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
         # 4. Bottom Action Bar
         action_bar = QHBoxLayout()
-        btn_add_rule = QPushButton("➕ Add New Rule")
+        btn_add_rule = QPushButton(tr("btn_add_rule"))
         btn_add_rule.clicked.connect(self._add_new_rule)
         action_bar.addWidget(btn_add_rule)
 
-        btn_del_rule = QPushButton("🗑️ Remove Selected Rule")
+        btn_del_rule = QPushButton(tr("btn_remove_rule"))
         btn_del_rule.clicked.connect(self._remove_selected_rule)
         action_bar.addWidget(btn_del_rule)
 
         action_bar.addStretch()
 
-        btn_save = QPushButton("💾 Validate && Save File")
+        btn_save = QPushButton(tr("btn_save_file"))
         btn_save.setObjectName("primaryBtn")
-        btn_save.setToolTip("Validates syntax using visudo compiler, creates an automatic backup, and atomically writes with chmod 0440.")
+        btn_save.setToolTip(tr("tooltip_save_file"))
         btn_save.clicked.connect(self._save_sudoers_file)
         action_bar.addWidget(btn_save)
 
@@ -418,9 +416,9 @@ class SudoersMainWindow(QMainWindow):
                 self.btn_unlock_read.setVisible(False)
                 self._on_file_selected()
             except Exception as e:
-                QMessageBox.critical(self, "Parse Error", f"Failed to parse sudoers data:\n{e}")
+                QMessageBox.critical(self, tr("title_parse_error"), tr("msg_parse_error", error=e))
         else:
-            QMessageBox.warning(self, "Read Failed", f"Could not read sudoers with root:\n{res.stderr or res.stdout}")
+            QMessageBox.warning(self, tr("title_read_failed"), tr("msg_read_failed", error=res.stderr or res.stdout))
 
     def _on_file_selected(self) -> None:
         path = self.cmb_files.currentText().strip()
@@ -445,9 +443,7 @@ class SudoersMainWindow(QMainWindow):
             self.rules = [SudoersParser.parse_line(line) for line in self.original_raw.splitlines()]
             self._is_read_restricted = False
             self.btn_unlock_read.setVisible(False)
-            self.preview_banner.set_subtitle(
-                "Modifying the user, groups, and command permissions below dynamically updates this rule string."
-            )
+            self.preview_banner.set_subtitle(tr("preview_sub_mod"))
         else:
             try:
                 with open(path, "r", encoding="utf-8") as f:
@@ -456,9 +452,7 @@ class SudoersMainWindow(QMainWindow):
                     self.rules = [SudoersParser.parse_line(line) for line in self.original_raw.splitlines()]
                     self._is_read_restricted = False
                     self.btn_unlock_read.setVisible(False)
-                    self.preview_banner.set_subtitle(
-                        "Modifying the user, groups, and command permissions below dynamically updates this rule string."
-                    )
+                    self.preview_banner.set_subtitle(tr("preview_sub_mod"))
             except PermissionError:
                 self._is_read_restricted = True
                 self.btn_unlock_read.setVisible(True)
@@ -467,12 +461,8 @@ class SudoersMainWindow(QMainWindow):
                     "# Click 'Read as Root' above to scan /etc/sudoers and all /etc/sudoers.d/ files in one single prompt."
                 )
                 self.rules = [SudoersRule(raw_line=self.original_raw, is_comment=True)]
-                self.preview_banner.set_text(
-                    f"[ROOT REQUIRED] {path} is protected. Click 'Read as Root' to scan and load contents."
-                )
-                self.preview_banner.set_subtitle(
-                    "⚠Root access is required to read system sudoers files. Click 'Read as Root' to scan /etc/sudoers and all .d files at once."
-                )
+                self.preview_banner.set_text(tr("preview_text_root_req", path=path))
+                self.preview_banner.set_subtitle(tr("preview_sub_root_req"))
             except FileNotFoundError:
                 # Newly created drop-in file
                 self.original_raw = ""
@@ -490,9 +480,7 @@ class SudoersMainWindow(QMainWindow):
                 ]
                 self._is_read_restricted = False
                 self.btn_unlock_read.setVisible(False)
-                self.preview_banner.set_subtitle(
-                    "New drop-in file (not yet created on disk). Configure permissions and click 'Validate && Save File' to apply."
-                )
+                self.preview_banner.set_subtitle(tr("preview_sub_dropin"))
 
         self._populate_table()
         self._sync_raw_from_rules()
@@ -510,7 +498,7 @@ class SudoersMainWindow(QMainWindow):
             self.table.setItem(row, 1, QTableWidgetItem(rule.hosts))
             runas_str = f"({rule.runas_user}:{rule.runas_group})" if rule.runas_group else f"({rule.runas_user})"
             self.table.setItem(row, 2, QTableWidgetItem(runas_str))
-            pass_str = "NOPASSWD" if rule.nopasswd else "Password Prompt"
+            pass_str = tr("val_nopasswd") if rule.nopasswd else tr("val_password_prompt")
             self.table.setItem(row, 3, QTableWidgetItem(pass_str))
             self.table.setItem(row, 4, QTableWidgetItem(rule.commands))
             self.table.item(row, 0).setData(Qt.ItemDataRole.UserRole, rule)
@@ -521,11 +509,9 @@ class SudoersMainWindow(QMainWindow):
             self.table.selectRow(0)
         else:
             if self._is_read_restricted:
-                self.preview_banner.set_text(
-                    f"[ROOT REQUIRED] {self.current_file_path} is protected. Click 'Read as Root' to view rules and scan .d files."
-                )
+                self.preview_banner.set_text(tr("preview_text_root_req_view", path=self.current_file_path))
             else:
-                self.preview_banner.set_text("# No active privilege rules configured in this file.")
+                self.preview_banner.set_text(tr("preview_text_no_rules"))
 
     def _on_table_selection_changed(self) -> None:
         if self._is_updating_ui:
@@ -575,7 +561,7 @@ class SudoersMainWindow(QMainWindow):
         self.table.item(row, 1).setText(rule.hosts)
         runas_str = f"({rule.runas_user}:{rule.runas_group})" if rule.runas_group else f"({rule.runas_user})"
         self.table.item(row, 2).setText(runas_str)
-        pass_str = "NOPASSWD" if rule.nopasswd else "Password Prompt"
+        pass_str = tr("val_nopasswd") if rule.nopasswd else tr("val_password_prompt")
         self.table.item(row, 3).setText(pass_str)
         self.table.item(row, 4).setText(rule.commands)
         self._is_updating_ui = False
@@ -595,7 +581,7 @@ class SudoersMainWindow(QMainWindow):
         if self._is_updating_ui:
             return
         raw_text = self.raw_editor.toPlainText()
-        self.preview_banner.set_text(f"Editing raw file: {self.current_file_path} ({len(raw_text.splitlines())} lines)")
+        self.preview_banner.set_text(tr("preview_text_raw_edit", path=self.current_file_path, lines=len(raw_text.splitlines())))
 
     def _on_tab_changed(self, idx: int) -> None:
         if not hasattr(self, "raw_editor"):
@@ -637,8 +623,8 @@ class SudoersMainWindow(QMainWindow):
         rule = self.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
         confirm = QMessageBox.question(
             self,
-            "Confirm Removal",
-            f"Are you sure you want to remove the sudoers privilege rule for:\n\n{rule.to_line()}?",
+            tr("title_confirm_removal"),
+            tr("msg_confirm_removal", rule=rule.to_line()),
         )
         if confirm == QMessageBox.StandardButton.Yes:
             self.rules.remove(rule)
@@ -648,8 +634,8 @@ class SudoersMainWindow(QMainWindow):
     def _create_new_dropin_file(self) -> None:
         filename, ok = QInputDialog.getText(
             self,
-            "Create New Sudoers Drop-in File",
-            "Enter filename for /etc/sudoers.d/:\n(e.g., 99-custom-admin, 10-developers)\n\nNote: Names must NOT contain '.' or end with '~'.",
+            tr("dialog_new_dropin_title"),
+            tr("dialog_new_dropin_label"),
             text="99-custom-admin",
         )
         if not ok or not filename.strip():
@@ -657,7 +643,7 @@ class SudoersMainWindow(QMainWindow):
         filename = filename.strip()
         is_valid, err_msg = SudoersParser.is_valid_dropin_filename(filename)
         if not is_valid:
-            QMessageBox.warning(self, "Invalid Filename", err_msg)
+            QMessageBox.warning(self, tr("title_invalid_filename"), err_msg)
             return
 
         full_path = os.path.join(self.target_dir, filename)
@@ -669,13 +655,13 @@ class SudoersMainWindow(QMainWindow):
     def _delete_dropin_file(self) -> None:
         path = self.current_file_path
         if not path or path == "/etc/sudoers":
-            QMessageBox.warning(self, "Action Prohibited", "The main /etc/sudoers file cannot be deleted.")
+            QMessageBox.warning(self, tr("title_action_prohibited"), tr("msg_cannot_delete_main"))
             return
 
         confirm = QMessageBox.question(
             self,
-            "Confirm Drop-in File Deletion",
-            f"Are you sure you want to permanently delete the sudoers drop-in file:\n\n{path}\n\nThis will remove all sudo privileges defined inside it.",
+            tr("title_confirm_delete_dropin"),
+            tr("msg_confirm_delete_dropin", path=path),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if confirm != QMessageBox.StandardButton.Yes:
@@ -683,14 +669,14 @@ class SudoersMainWindow(QMainWindow):
 
         res = SafeExecutor.run_command(["rm", "-f", path], elevated=True)
         if res.success:
-            QMessageBox.information(self, "File Deleted", f"Deleted drop-in file:\n{path}")
+            QMessageBox.information(self, tr("title_file_deleted"), tr("msg_dropin_deleted", path=path))
             self._cached_contents.pop(path, None)
             idx = self.cmb_files.findText(path)
             if idx != -1:
                 self.cmb_files.removeItem(idx)
             self.cmb_files.setCurrentText("/etc/sudoers")
         else:
-            QMessageBox.critical(self, "Deletion Failed", f"Could not delete {path}:\n{res.stderr or res.stdout}")
+            QMessageBox.critical(self, tr("title_deletion_failed"), tr("msg_delete_failed", path=path, error=res.stderr or res.stdout))
 
     def _get_current_content_to_save(self) -> str:
         if self.tabs.currentIndex() == 1:
@@ -703,26 +689,26 @@ class SudoersMainWindow(QMainWindow):
         if is_valid:
             QMessageBox.information(
                 self,
-                "visudo Syntax Check Passed",
-                f"visudo syntax validation succeeded!\n\nNo errors or syntax warnings were found in this configuration.",
+                tr("title_visudo_passed"),
+                tr("msg_visudo_passed"),
             )
         else:
             QMessageBox.critical(
                 self,
-                "visudo Syntax Error Detected",
-                f"visudo reported a syntax error:\n\n{msg}\n\nRule will NOT be saved until corrected to prevent root lockout.",
+                tr("title_visudo_error"),
+                tr("msg_visudo_error", msg=msg),
             )
 
     def _inspect_diff(self) -> None:
         new_content = self._get_current_content_to_save()
         diff = generate_diff(self.original_raw, new_content, os.path.basename(self.current_file_path))
         dlg = SafetyExecutionDialog(
-            title="Inspect Sudoers Changes",
+            title=tr("dialog_diff_title"),
             target_path_or_command=self.current_file_path,
-            diff_text=diff if diff.strip() else "# No differences detected",
+            diff_text=diff if diff.strip() else tr("diff_no_diff"),
             safety_notes=[
-                "Syntax will be verified with 'visudo -c -f' before applying.",
-                "Permissions will be locked strictly to 0440.",
+                tr("note_verify_visudo"),
+                tr("note_lock_0440"),
             ],
             parent=self,
         )
@@ -736,29 +722,29 @@ class SudoersMainWindow(QMainWindow):
         if not is_valid:
             QMessageBox.critical(
                 self,
-                "Refusing to Save - visudo Error",
-                f"visudo detected an invalid configuration:\n\n{msg}\n\nAborting save to prevent system lockout.",
+                tr("title_refuse_save"),
+                tr("msg_refuse_save", msg=msg),
             )
             return
 
         diff = generate_diff(self.original_raw, new_content, os.path.basename(self.current_file_path))
         notes = [
-            "Syntax verified with 'visudo -c -f' (validation passed).",
-            "File permissions will be set strictly to 0440 (required by sudo).",
-            "Timestamped backup will be created before overwriting.",
+            tr("note_save_visudo"),
+            tr("note_save_permissions"),
+            tr("note_save_backup"),
         ]
         if self.current_file_path == "/etc/sudoers":
-            notes.append("⚠Primary /etc/sudoers file is being modified.")
+            notes.append(tr("note_primary_modified"))
         else:
-            notes.append(f"Drop-in rule file: {self.current_file_path}")
+            notes.append(tr("note_dropin_file", path=self.current_file_path))
 
         if self.current_ownership.is_managed:
-            notes.insert(0, f"CAUTION: Managed by package '{self.current_ownership.package_name}'.")
+            notes.insert(0, tr("note_pkg_managed", pkg=self.current_ownership.package_name))
 
         dlg = SafetyExecutionDialog(
-            title="Apply Sudoers Configuration",
+            title=tr("dialog_apply_title"),
             target_path_or_command=self.current_file_path,
-            diff_text=diff if diff.strip() else "# No differences detected",
+            diff_text=diff if diff.strip() else tr("diff_no_diff"),
             safety_notes=notes,
             parent=self,
         )
@@ -780,14 +766,14 @@ class SudoersMainWindow(QMainWindow):
                 if res.success:
                     QMessageBox.information(
                         self,
-                        "Success",
-                        f"Sudoers configuration successfully saved and validated with chmod 0440!\nPath: {target}",
+                        tr("title_success"),
+                        tr("msg_saved_success", path=target),
                     )
                     self.original_raw = new_content
                     self._cached_contents[target] = new_content
                     self._on_file_selected()
                 else:
-                    QMessageBox.critical(self, "Save Failed", f"Failed:\n{res.stderr or res.stdout}")
+                    QMessageBox.critical(self, tr("title_save_failed"), tr("msg_save_failed", error=res.stderr or res.stdout))
             finally:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)

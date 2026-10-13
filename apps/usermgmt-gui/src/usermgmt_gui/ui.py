@@ -29,6 +29,7 @@ from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog
 from linux_gui_core.widgets.tooltips import format_tooltip
 from usermgmt_gui.backend import UserInfo, UserManagementBackend
+from usermgmt_gui.strings import tr
 
 
 COMMON_SECURITY_GROUPS = [
@@ -49,56 +50,57 @@ class CreateUserDialog(QDialog):
 
     def __init__(self, available_groups: list[str], parent: QWidget | None = None):
         super().__init__(parent)
-        self.setWindowTitle("Create New Linux User Account")
-        self.resize(680, 560)
+        self.setWindowTitle(tr("dlg_create_user_title"))
+        self.resize(640, 500)
         self.available_groups = available_groups
         self.selected_groups: set[str] = set()
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
 
         # 1. Top live preview banner
         self.preview_banner = LivePreviewBanner(
-            title="Useradd Command Preview",
-            subtitle="Parameters configured below live update the terminal command.",
+            title=tr("dlg_create_preview_title"),
+            subtitle=tr("dlg_create_preview_subtitle"),
         )
         layout.addWidget(self.preview_banner)
 
         # Form fields
-        form_group = QGroupBox("New Account Details")
+        form_group = QGroupBox(tr("group_account_details"))
         form_grid = QGridLayout(form_group)
-        form_grid.setSpacing(8)
+        form_grid.setSpacing(6)
 
         # Username
-        form_grid.addWidget(QLabel("Username:"), 0, 0)
+        form_grid.addWidget(QLabel(tr("lbl_username")), 0, 0)
         self.txt_username = QLineEdit()
-        self.txt_username.setPlaceholderText("e.g. alice, bob, devops")
+        self.txt_username.setPlaceholderText(tr("placeholder_username"))
         self.txt_username.setToolTip(format_tooltip(
-            "Account Username",
-            "useradd <username>",
-            "Login identifier for the user. Typically all lowercase letters, numbers, and dashes.",
-            "Required",
-            "alice",
+            tr("tooltip_username_title"),
+            tr("tooltip_username_syntax"),
+            tr("tooltip_username_desc"),
+            tr("tooltip_username_impact"),
+            tr("tooltip_username_example"),
         ))
         self.txt_username.textChanged.connect(self._update_preview)
         form_grid.addWidget(self.txt_username, 0, 1)
 
         # Full Name / GECOS
-        form_grid.addWidget(QLabel("Full Name (GECOS):"), 0, 2)
+        form_grid.addWidget(QLabel(tr("lbl_gecos")), 0, 2)
         self.txt_gecos = QLineEdit()
-        self.txt_gecos.setPlaceholderText("e.g. Alice Smith (Optional)")
+        self.txt_gecos.setPlaceholderText(tr("placeholder_gecos"))
         self.txt_gecos.setToolTip(format_tooltip(
-            "Comment / Real Name",
-            '-c "Full Name"',
-            "Informational comment field stored in /etc/passwd.",
-            "Optional",
-            "Alice Smith",
+            tr("tooltip_gecos_title"),
+            tr("tooltip_gecos_syntax"),
+            tr("tooltip_gecos_desc"),
+            tr("tooltip_gecos_impact"),
+            tr("tooltip_gecos_example"),
         ))
         self.txt_gecos.textChanged.connect(self._update_preview)
         form_grid.addWidget(self.txt_gecos, 0, 3)
 
         # Login Shell
-        form_grid.addWidget(QLabel("Login Shell:"), 1, 0)
+        form_grid.addWidget(QLabel(tr("lbl_shell")), 1, 0)
         self.cmb_shell = QComboBox()
         self.cmb_shell.setEditable(True)
         self.cmb_shell.addItems([
@@ -110,21 +112,21 @@ class CreateUserDialog(QDialog):
             "/usr/sbin/nologin",
         ])
         self.cmb_shell.setToolTip(format_tooltip(
-            "Initial Login Shell",
-            "-s /path/to/shell",
-            "Interactive shells (/bin/bash, /usr/bin/zsh) allow terminal login.<br>/usr/bin/nologin prevents interactive terminal login for service accounts.",
+            tr("tooltip_shell_title"),
+            tr("tooltip_shell_syntax"),
+            tr("tooltip_shell_desc"),
         ))
         self.cmb_shell.currentTextChanged.connect(self._update_preview)
         form_grid.addWidget(self.cmb_shell, 1, 1)
 
         # Create home directory checkbox
-        self.chk_home = QCheckBox("Create Home Directory (-m)")
+        self.chk_home = QCheckBox(tr("chk_home"))
         self.chk_home.setChecked(True)
         self.chk_home.setToolTip(format_tooltip(
-            "Create Home Directory",
-            "-m",
-            "Creates /home/<username> populated with default skeleton files from /etc/skel.",
-            "Recommended for human users",
+            tr("tooltip_home_title"),
+            tr("tooltip_home_syntax"),
+            tr("tooltip_home_desc"),
+            tr("tooltip_home_impact"),
         ))
         self.chk_home.toggled.connect(self._update_preview)
         form_grid.addWidget(self.chk_home, 1, 2, 1, 2)
@@ -132,15 +134,15 @@ class CreateUserDialog(QDialog):
         layout.addWidget(form_group)
 
         # Initial Groups
-        grp_box = QGroupBox("Initial Group Memberships (Click to add to -G)")
+        grp_box = QGroupBox(tr("group_initial_groups"))
         grp_grid = QGridLayout(grp_box)
-        grp_grid.setSpacing(8)
+        grp_grid.setSpacing(6)
 
         self.group_checkboxes: dict[str, QCheckBox] = {}
         for idx, (g_name, desc, impact, example) in enumerate(COMMON_SECURITY_GROUPS):
             if g_name in self.available_groups or g_name in ("wheel", "sudo", "docker"):
                 chk = QCheckBox(g_name)
-                chk.setToolTip(format_tooltip(f"Group: {g_name}", f"-G {g_name}", desc, impact, example))
+                chk.setToolTip(format_tooltip(tr("tooltip_group_prefix", group=g_name), tr("tooltip_group_syntax", group=g_name), desc, impact, example))
                 chk.toggled.connect(self._update_preview)
                 self.group_checkboxes[g_name] = chk
                 row = len(self.group_checkboxes) // 4
@@ -151,7 +153,7 @@ class CreateUserDialog(QDialog):
 
         # Dialog Buttons
         btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        btn_box.button(QDialogButtonBox.StandardButton.Ok).setText("Create User Account")
+        btn_box.button(QDialogButtonBox.StandardButton.Ok).setText(tr("btn_create_account"))
         btn_box.button(QDialogButtonBox.StandardButton.Ok).setObjectName("primaryBtn")
         btn_box.accepted.connect(self._validate_and_accept)
         btn_box.rejected.connect(self.reject)
@@ -178,7 +180,7 @@ class CreateUserDialog(QDialog):
     def _validate_and_accept(self) -> None:
         uname = self.txt_username.text().strip().lower()
         if not uname:
-            QMessageBox.warning(self, "Invalid Username", "Please enter a username.")
+            QMessageBox.warning(self, tr("title_invalid_username"), tr("msg_empty_username"))
             self.txt_username.setFocus()
             return
 
@@ -186,8 +188,8 @@ class CreateUserDialog(QDialog):
         if not re.match(r"^[a-z_][a-z0-9_-]*$", uname):
             QMessageBox.warning(
                 self,
-                "Invalid Username",
-                "Username must start with a lowercase letter or underscore, and contain only lowercase letters, digits, underscores, or dashes.",
+                tr("title_invalid_username"),
+                tr("msg_invalid_username_regex"),
             )
             self.txt_username.setFocus()
             return
@@ -208,9 +210,9 @@ class UserMgmtMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("User & Group Security Manager")
-        self.resize(1180, 820)
-        self.setMinimumSize(960, 680)
+        self.setWindowTitle(tr("window_title"))
+        self.resize(1280, 720)
+        self.setMinimumSize(920, 620)
 
         self.users: list[UserInfo] = []
         self.all_system_groups: list[str] = []
@@ -225,32 +227,33 @@ class UserMgmtMainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
 
         # 1. Top Live Preview Banner
         self.preview_banner = LivePreviewBanner(
-            title="Terminal Command Preview",
-            subtitle="Modifying group checkboxes below dynamically constructs the exact usermod command. Hover to view permission risks.",
+            title=tr("preview_title"),
+            subtitle=tr("preview_subtitle"),
         )
         layout.addWidget(self.preview_banner)
 
         # 2. Filter & Options Bar
         filter_bar = QHBoxLayout()
-        filter_bar.addWidget(QLabel("Filter Accounts:"))
+        filter_bar.setSpacing(8)
+        filter_bar.addWidget(QLabel(tr("lbl_filter_accounts")))
         self.txt_filter = QLineEdit()
-        self.txt_filter.setPlaceholderText("Search username or UID...")
+        self.txt_filter.setPlaceholderText(tr("placeholder_filter_accounts"))
         self.txt_filter.textChanged.connect(self._filter_users)
         filter_bar.addWidget(self.txt_filter)
 
-        self.chk_show_system = QCheckBox("Show System Daemon Accounts (UID < 1000)")
-        self.chk_show_system.setToolTip("Toggle to display low-level system daemon accounts. Advanced users only.")
+        self.chk_show_system = QCheckBox(tr("chk_show_system"))
+        self.chk_show_system.setToolTip(tr("tooltip_show_system"))
         self.chk_show_system.toggled.connect(self.reload_users)
         filter_bar.addWidget(self.chk_show_system)
 
         filter_bar.addStretch()
 
-        btn_refresh = QPushButton("🔃 Refresh")
+        btn_refresh = QPushButton(tr("btn_refresh"))
         btn_refresh.clicked.connect(self.reload_users)
         filter_bar.addWidget(btn_refresh)
 
@@ -261,19 +264,19 @@ class UserMgmtMainWindow(QMainWindow):
 
         self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels([
-            "Username",
-            "UID",
-            "Full Name / GECOS",
-            "Login Shell",
-            "Home Directory",
-            "Active Groups",
+            tr("col_username"),
+            tr("col_uid"),
+            tr("col_gecos"),
+            tr("col_shell"),
+            tr("col_home"),
+            tr("col_groups"),
         ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
-        self.table.setColumnWidth(0, 160)
-        self.table.setColumnWidth(1, 80)
-        self.table.setColumnWidth(3, 160)
+        self.table.setColumnWidth(0, 150)
+        self.table.setColumnWidth(1, 70)
+        self.table.setColumnWidth(3, 150)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.itemSelectionChanged.connect(self._on_user_selected)
         splitter.addWidget(self.table)
@@ -285,20 +288,20 @@ class UserMgmtMainWindow(QMainWindow):
 
         form_widget = QWidget()
         form_layout = QVBoxLayout(form_widget)
-        form_layout.setContentsMargins(4, 6, 4, 6)
-        form_layout.setSpacing(10)
+        form_layout.setContentsMargins(4, 4, 4, 4)
+        form_layout.setSpacing(8)
 
         # User details fields
-        details_group = QGroupBox("Selected User Profile")
+        details_group = QGroupBox(tr("group_user_profile"))
         details_grid = QGridLayout(details_group)
-        details_grid.setSpacing(8)
+        details_grid.setSpacing(6)
 
-        details_grid.addWidget(QLabel("Username:"), 0, 0)
+        details_grid.addWidget(QLabel(tr("lbl_username")), 0, 0)
         self.lbl_uname = QLabel("-")
-        self.lbl_uname.setStyleSheet("font-weight: bold; color: #89b4fa; font-size: 14px;")
+        self.lbl_uname.setStyleSheet("font-weight: bold; color: #6899e6; font-size: 13px;")
         details_grid.addWidget(self.lbl_uname, 0, 1)
 
-        details_grid.addWidget(QLabel("Login Shell:"), 0, 2)
+        details_grid.addWidget(QLabel(tr("lbl_shell")), 0, 2)
         self.cmb_shell = QComboBox()
         self.cmb_shell.setEditable(True)
         self.cmb_shell.addItems([
@@ -311,15 +314,11 @@ class UserMgmtMainWindow(QMainWindow):
             "/bin/false",
         ])
         self.cmb_shell.setToolTip(format_tooltip(
-            "User Login Shell",
-            "Interactive or not?",
-            "<b>Interactive Shells</b> (/bin/bash, /usr/bin/zsh, /usr/bin/fish):<br>"
-            "Allows a human user to log in interactively via console, terminal, or SSH.<br><br>"
-            "<b>Non-Interactive Shells</b> (/usr/bin/nologin, /usr/sbin/nologin, /bin/false):<br>"
-            "Prevents interactive login while still allowing the account to own files and run background system services.<br>"
-            "Protects the system by ensuring service accounts cannot be used to spawn an interactive shell.",
-            "Security Best Practice",
-            "/bin/bash (or zsh/fish etc.) for humans, /usr/bin/nologin for system services",
+            tr("tooltip_user_shell_title"),
+            tr("tooltip_user_shell_syntax"),
+            tr("tooltip_user_shell_desc"),
+            tr("tooltip_user_shell_impact"),
+            tr("tooltip_user_shell_example"),
         ))
         self.cmb_shell.currentTextChanged.connect(self._on_form_modified)
         details_grid.addWidget(self.cmb_shell, 0, 3)
@@ -327,14 +326,14 @@ class UserMgmtMainWindow(QMainWindow):
         form_layout.addWidget(details_group)
 
         # Curated Common Groups Box
-        curated_box = QGroupBox("Common Security & Hardware Groups (Click to toggle in real time)")
+        curated_box = QGroupBox(tr("group_common_groups"))
         curated_grid = QGridLayout(curated_box)
-        curated_grid.setSpacing(10)
+        curated_grid.setSpacing(8)
 
         self.curated_checkboxes: dict[str, QCheckBox] = {}
         for idx, (grp_name, desc, sec_impact, example) in enumerate(self.SECURITY_GROUPS):
             chk = QCheckBox(grp_name)
-            chk.setToolTip(format_tooltip(f"Group: {grp_name}", f"Member of {grp_name}", desc, sec_impact, example))
+            chk.setToolTip(format_tooltip(tr("tooltip_group_prefix", group=grp_name), tr("tooltip_member_of", group=grp_name), desc, sec_impact, example))
             chk.toggled.connect(lambda checked, g=grp_name: self._on_curated_group_toggled(g, checked))
             self.curated_checkboxes[grp_name] = chk
             row = idx // 4
@@ -344,19 +343,20 @@ class UserMgmtMainWindow(QMainWindow):
         form_layout.addWidget(curated_box)
 
         # All System Groups Search & Toggle Area
-        all_groups_box = QGroupBox("All Groups")
+        all_groups_box = QGroupBox(tr("group_all_groups"))
         all_groups_layout = QVBoxLayout(all_groups_box)
+        all_groups_layout.setSpacing(6)
 
         search_bar = QHBoxLayout()
-        search_bar.addWidget(QLabel("Search Groups:"))
+        search_bar.addWidget(QLabel(tr("lbl_search_groups")))
         self.txt_group_search = QLineEdit()
-        self.txt_group_search.setPlaceholderText("Filter all groups (e.g. vboxusers, libvirt)...")
+        self.txt_group_search.setPlaceholderText(tr("placeholder_search_groups"))
         self.txt_group_search.textChanged.connect(self._filter_all_groups_list)
         search_bar.addWidget(self.txt_group_search)
         all_groups_layout.addLayout(search_bar)
 
         self.list_all_groups = QListWidget()
-        self.list_all_groups.setFixedHeight(140)
+        self.list_all_groups.setFixedHeight(120)
         self.list_all_groups.itemChanged.connect(self._on_list_group_item_changed)
         all_groups_layout.addWidget(self.list_all_groups)
 
@@ -368,17 +368,18 @@ class UserMgmtMainWindow(QMainWindow):
 
         # Bottom Action Bar
         action_bar = QHBoxLayout()
-        btn_add = QPushButton("Create New User")
+        action_bar.setSpacing(8)
+        btn_add = QPushButton(tr("btn_create_new_user"))
         btn_add.clicked.connect(self._create_new_user)
         action_bar.addWidget(btn_add)
 
-        btn_del = QPushButton("Remove Selected User")
+        btn_del = QPushButton(tr("btn_delete_user"))
         btn_del.clicked.connect(self._delete_selected_user)
         action_bar.addWidget(btn_del)
 
         action_bar.addStretch()
 
-        self.btn_apply = QPushButton("Apply Group Changes")
+        self.btn_apply = QPushButton(tr("btn_apply_groups"))
         self.btn_apply.setObjectName("primaryBtn")
         self.btn_apply.clicked.connect(self._apply_group_changes)
         action_bar.addWidget(self.btn_apply)
@@ -514,11 +515,11 @@ class UserMgmtMainWindow(QMainWindow):
         self.preview_banner.set_text(cmd)
 
         safety_dlg = SafetyExecutionDialog(
-            title="Confirm User Account Creation",
+            title=tr("dialog_confirm_create_title"),
             target_path_or_command=cmd,
             safety_notes=[
-                f"Creates new account '{clean_uname}' with initial shell and groups.",
-                "Elevates with pkexec to execute useradd.",
+                tr("note_create_account", username=clean_uname),
+                tr("note_elevate_useradd"),
             ],
             parent=self,
         )
@@ -527,33 +528,33 @@ class UserMgmtMainWindow(QMainWindow):
             if res.success:
                 QMessageBox.information(
                     self,
-                    "User Created",
-                    f"User '{clean_uname}' was created successfully!\n\nCommand executed:\n{cmd}\n\nTip: You can set their password anytime in terminal via:\nsudo passwd {clean_uname}",
+                    tr("title_user_created"),
+                    tr("msg_user_created_success", username=clean_uname, command=cmd),
                 )
                 self.reload_users()
             else:
-                QMessageBox.critical(self, "Creation Failed", f"Failed:\n{res.stderr or res.stdout}")
+                QMessageBox.critical(self, tr("title_creation_failed"), tr("msg_creation_failed", error=res.stderr or res.stdout))
 
     def _delete_selected_user(self) -> None:
         if not self.active_user:
             return
         cmd = UserManagementBackend.build_del_user_cmd(self.active_user.username, remove_home=True)
         dlg = SafetyExecutionDialog(
-            title=f"Delete User: {self.active_user.username}",
+            title=tr("dialog_delete_title", username=self.active_user.username),
             target_path_or_command=cmd,
             safety_notes=[
-                f"Deletes account '{self.active_user.username}' and removes home directory.",
-                "THIS ACTION CANNOT BE UNDONE.",
+                tr("note_delete_account", username=self.active_user.username),
+                tr("note_action_irreversible"),
             ],
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = UserManagementBackend.execute_command_string(cmd)
             if res.success:
-                QMessageBox.information(self, "Deleted", f"User {self.active_user.username} deleted.")
+                QMessageBox.information(self, tr("title_deleted"), tr("msg_deleted_success", username=self.active_user.username))
                 self.reload_users()
             else:
-                QMessageBox.critical(self, "Delete Failed", f"Failed:\n{res.stderr}")
+                QMessageBox.critical(self, tr("title_delete_failed"), tr("msg_delete_failed", error=res.stderr))
 
     def _apply_group_changes(self) -> None:
         if not self.active_user:
@@ -562,19 +563,19 @@ class UserMgmtMainWindow(QMainWindow):
         cmd = UserManagementBackend.build_modify_groups_cmd(self.active_user.username, sorted_groups)
 
         dlg = SafetyExecutionDialog(
-            title="Apply Group Modifications",
+            title=tr("dialog_apply_groups_title"),
             target_path_or_command=cmd,
             safety_notes=[
-                f"Modifies group memberships for '{self.active_user.username}'.",
-                f"Total groups assigned: {len(sorted_groups)}",
-                "User must log out and log back in for new group permissions to take effect in active desktop sessions.",
+                tr("note_modify_user_groups", username=self.active_user.username),
+                tr("note_total_groups", count=len(sorted_groups)),
+                tr("note_relogin_required"),
             ],
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = UserManagementBackend.execute_command_string(cmd)
             if res.success:
-                QMessageBox.information(self, "Success", f"Groups updated!\nCommand: {cmd}")
+                QMessageBox.information(self, tr("title_success"), tr("msg_groups_updated", command=cmd))
                 self.reload_users()
             else:
-                QMessageBox.critical(self, "Update Failed", f"Failed:\n{res.stderr}")
+                QMessageBox.critical(self, tr("title_update_failed"), tr("msg_update_failed", error=res.stderr))

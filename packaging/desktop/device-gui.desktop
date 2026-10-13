@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Device Manager
+Comment=Modern Linux hardware tree, driver inspector, and device manager
+Exec=device-gui
+Icon=linux-system-guis
+Terminal=false
+Type=Application
+Categories=System;HardwareSettings;Settings;
+StartupNotify=true

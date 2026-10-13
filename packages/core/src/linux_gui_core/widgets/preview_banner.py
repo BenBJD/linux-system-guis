@@ -12,10 +12,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from linux_gui_core.strings import tr
+
 
 class LivePreviewBanner(QFrame):
     """A top-of-window banner that dynamically updates in real time to show the exact
-
     entry or command being generated as the user toggles options.
     """
 
@@ -23,46 +24,53 @@ class LivePreviewBanner(QFrame):
 
     def __init__(
         self,
-        title: str = "Live Entry Preview",
-        subtitle: str = "Changes below update this line in real-time. Hover over any checkbox for details.",
+        title: str | None = None,
+        subtitle: str | None = None,
         parent: QWidget | None = None,
     ):
         super().__init__(parent)
+        if title is None:
+            title = tr("banner_default_title")
+        if subtitle is None:
+            subtitle = tr("banner_default_subtitle")
         self.setObjectName("livePreviewBanner")
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setStyleSheet(
             """
             #livePreviewBanner {
-                background-color: #11111b;
-                border: 2px solid #89b4fa;
-                border-radius: 10px;
-                padding: 10px;
+                background-color: #222428;
+                border: 1px solid #3a3d45;
+                border-left: 3px solid #3574d4;
+                border-radius: 4px;
+                padding: 6px;
             }
             """
         )
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(6)
+        layout.setContentsMargins(10, 6, 10, 6)
+        layout.setSpacing(4)
 
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(8)
+        header_layout.setSpacing(6)
 
         self.title_label = QLabel(f"{title}")
-        self.title_label.setStyleSheet("font-weight: bold; color: #89b4fa; font-size: 13px; letter-spacing: 0.5px;")
+        self.title_label.setStyleSheet("font-weight: bold; color: #6899e6; font-size: 12px; letter-spacing: 0.3px;")
         header_layout.addWidget(self.title_label)
 
         header_layout.addStretch()
 
-        self.btn_copy = QPushButton("Copy Line")
-        self.btn_copy.setToolTip("Copy this exact line or command to the clipboard to use in terminal")
-        self.btn_copy.setFixedHeight(26)
+        self.btn_copy = QPushButton(tr("banner_btn_copy"))
+        self.btn_copy.setToolTip(tr("banner_btn_copy_tooltip"))
+        self.btn_copy.setFixedHeight(22)
+        self.btn_copy.setStyleSheet("font-size: 11px; padding: 2px 8px;")
         self.btn_copy.clicked.connect(self._copy_to_clipboard)
         header_layout.addWidget(self.btn_copy)
 
-        self.btn_diff = QPushButton("Compare Diff")
-        self.btn_diff.setToolTip("View side-by-side comparison with the existing system configuration")
-        self.btn_diff.setFixedHeight(26)
+        self.btn_diff = QPushButton(tr("banner_btn_diff"))
+        self.btn_diff.setToolTip(tr("banner_btn_diff_tooltip"))
+        self.btn_diff.setFixedHeight(22)
+        self.btn_diff.setStyleSheet("font-size: 11px; padding: 2px 8px;")
         self.btn_diff.clicked.connect(self.diffRequested.emit)
         header_layout.addWidget(self.btn_diff)
 
@@ -71,20 +79,20 @@ class LivePreviewBanner(QFrame):
         # Monospace live code box
         self.code_display = QTextEdit()
         self.code_display.setReadOnly(True)
-        self.code_display.setFixedHeight(46)
+        self.code_display.setFixedHeight(36)
         self.code_display.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.code_display.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        mono_font = QFont("JetBrains Mono", 11)
+        mono_font = QFont("JetBrains Mono", 10)
         mono_font.setStyleHint(QFont.StyleHint.Monospace)
         self.code_display.setFont(mono_font)
         self.code_display.setStyleSheet(
             """
             QTextEdit {
-                background-color: #181825;
-                color: #a6e3a1;
-                border: 1px solid #313244;
-                border-radius: 6px;
-                padding: 6px;
+                background-color: #18191c;
+                color: #57ab5a;
+                border: 1px solid #2d3036;
+                border-radius: 3px;
+                padding: 4px;
                 font-weight: 500;
             }
             """
@@ -92,7 +100,7 @@ class LivePreviewBanner(QFrame):
         layout.addWidget(self.code_display)
 
         self.subtitle_label = QLabel(subtitle)
-        self.subtitle_label.setStyleSheet("color: #a6adc8; font-size: 11px; font-style: italic;")
+        self.subtitle_label.setStyleSheet("color: #9498a1; font-size: 10px; font-style: italic;")
         layout.addWidget(self.subtitle_label)
 
     def set_text(self, text: str) -> None:
@@ -115,10 +123,11 @@ class LivePreviewBanner(QFrame):
         if clipboard:
             clipboard.setText(self.get_text())
             original_text = self.btn_copy.text()
-            self.btn_copy.setText("Copied!")
-            self.btn_copy.setStyleSheet("background-color: #a6e3a1; color: #11111b; font-weight: bold;")
+            self.btn_copy.setText(tr("banner_btn_copied"))
+            self.btn_copy.setStyleSheet("background-color: #2da44e; color: #ffffff; font-weight: bold; font-size: 11px;")
             from PyQt6.QtCore import QTimer
             QTimer.singleShot(1500, lambda: self._reset_copy_btn(original_text))
 
     def _reset_copy_btn(self, original_text: str) -> None:
         self.btn_copy.setText(original_text)
+        self.btn_copy.setStyleSheet("font-size: 11px; padding: 2px 8px;")

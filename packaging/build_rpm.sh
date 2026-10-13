@@ -19,10 +19,14 @@ if command -v rpmbuild >/dev/null 2>&1; then
 
     VERSION="0.1.0"
     TAR_NAME="linux-system-guis-${VERSION}"
-    git archive --format=tar.gz --prefix="${TAR_NAME}/" HEAD -o "$RPMBUILD_DIR/SOURCES/${TAR_NAME}.tar.gz" 2>/dev/null || {
-        # Fallback if git archive is not available
-        tar --exclude='.venv' --exclude='dist' --exclude='build' -czf "$RPMBUILD_DIR/SOURCES/${TAR_NAME}.tar.gz" --transform "s,^,${TAR_NAME}/," .
-    }
+
+    # Create archive directly from local tree to include untracked/staged files during development
+    tar --exclude='.git' --exclude='.venv' --exclude='packaging/arch/pkg' \
+        --exclude='packaging/arch/src' --exclude='packaging/arch/dist' \
+        --exclude='packaging/arch/*.pkg.tar.*' --exclude='build' \
+        --exclude='dist' \
+        -czf "$RPMBUILD_DIR/SOURCES/${TAR_NAME}.tar.gz" \
+        --transform "s,^\.,${TAR_NAME}," -C "$ROOT_DIR" .
 
     cp "$SCRIPT_DIR/rpm/linux-system-guis.spec" "$RPMBUILD_DIR/SPECS/"
     rpmbuild --define "_topdir $RPMBUILD_DIR" -ba "$RPMBUILD_DIR/SPECS/linux-system-guis.spec"

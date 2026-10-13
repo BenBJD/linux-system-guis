@@ -18,6 +18,9 @@ BuildRequires:  python3-build
 Requires:       python3
 Requires:       python3-pyqt6
 Requires:       polkit
+Recommends:     pciutils
+Recommends:     usbutils
+Recommends:     inxi
 Recommends:     sudo
 Recommends:     systemd
 Recommends:     acl
@@ -30,6 +33,7 @@ preview banners, educational tooltips, strict dry-run validators (including visu
 and automatic backups.
 
 Includes graphical tools for:
+- Hardware hierarchy, drivers & DKMS modules (device-gui)
 - /etc/fstab disk mount entries (fstab-gui)
 - /etc/udev/rules.d device rules (udev-gui)
 - systemd services and timers (systemd-gui)
@@ -48,7 +52,7 @@ Includes graphical tools for:
 # Build wheels for core library and applications
 mkdir -p dist
 python3 -m build --wheel --no-isolation --outdir dist packages/core
-for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui; do
+for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui device-gui; do
     python3 -m build --wheel --no-isolation --outdir dist "apps/$app"
 done
 
@@ -76,6 +80,7 @@ cp packaging/desktop/icons/linux-system-guis.svg %{buildroot}%{_datadir}/icons/h
 %license LICENSE
 %doc README.md
 %{_bindir}/linux-system-guis
+%{_bindir}/device-gui
 %{_bindir}/fstab-gui
 %{_bindir}/udev-gui
 %{_bindir}/systemd-gui

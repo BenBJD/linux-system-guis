@@ -4,10 +4,14 @@ pkgver=0.1.0
 pkgrel=1
 pkgdesc="An educational, transparent, and safe desktop GUI suite for low-level Linux administration"
 arch=('any')
-url="https://github.com/BenBJD/linux-system-guis"
+url="https://github.com/bendavison/linux-system-guis"
 license=('MIT')
 depends=('python' 'python-pyqt6' 'polkit')
 optdepends=(
+    'pciutils: PCI device hardware inspection (lspci)'
+    'usbutils: USB device hardware inspection (lsusb)'
+    'inxi: system hardware summary reports'
+    'dkms: dynamic kernel module status detection'
     'sudo: sudoers rule validation and privilege escalation'
     'systemd: journalctl, systemd services & timers, and systemd-boot'
     'grub: GRUB bootloader configuration'
@@ -33,7 +37,7 @@ build() {
     "$py_bin" -m build $build_opts packages/core
 
     # Build individual applications and launcher hub
-    for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui; do
+    for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui device-gui; do
         "$py_bin" -m build $build_opts "apps/$app"
     done
 }

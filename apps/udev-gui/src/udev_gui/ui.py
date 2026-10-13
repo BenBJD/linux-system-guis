@@ -33,6 +33,7 @@ from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog, generate_diff
 from linux_gui_core.widgets.tooltips import format_tooltip
 from udev_gui.parser import UdevParser, UdevRule
+from udev_gui.strings import tr
 
 
 ADVANCED_UDEV_PRESETS = [
@@ -92,18 +93,19 @@ class AdvancedAttributeDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Search & Add Advanced udev Attribute")
-        self.resize(650, 450)
+        self.setWindowTitle(tr("dlg_adv_title"))
+        self.resize(640, 440)
         self.selected_token: str = ""
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(10)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
 
         # Search bar
         search_layout = QHBoxLayout()
-        search_layout.addWidget(QLabel("Search Attributes:"))
+        search_layout.addWidget(QLabel(tr("lbl_search_attrs")))
         self.txt_search = QLineEdit()
-        self.txt_search.setPlaceholderText("Type 'wakeup', 'power', 'options', 'env'...")
+        self.txt_search.setPlaceholderText(tr("placeholder_search_attrs"))
         self.txt_search.textChanged.connect(self._filter_list)
         search_layout.addWidget(self.txt_search)
         layout.addLayout(search_layout)
@@ -115,10 +117,10 @@ class AdvancedAttributeDialog(QDialog):
         layout.addWidget(self.list_widget)
 
         # Custom entry box
-        custom_box = QGroupBox("Or Enter Custom Token")
+        custom_box = QGroupBox(tr("group_custom_token"))
         c_layout = QHBoxLayout(custom_box)
         self.txt_custom = QLineEdit()
-        self.txt_custom.setPlaceholderText('e.g. ATTR{power/wakeup}="disabled" or ENV{MY_VAR}=="1"')
+        self.txt_custom.setPlaceholderText(tr("placeholder_custom_token"))
         c_layout.addWidget(self.txt_custom)
         layout.addWidget(custom_box)
 
@@ -131,7 +133,7 @@ class AdvancedAttributeDialog(QDialog):
     def _populate_list(self) -> None:
         self.list_widget.clear()
         for token, title, desc, badge in ADVANCED_UDEV_PRESETS:
-            item = QListWidgetItem(f"{title}  ➜  {token}\n    {desc}")
+            item = QListWidgetItem(f"{title}  ➔  {token}\n    {desc}")
             item.setData(Qt.ItemDataRole.UserRole, token)
             self.list_widget.addItem(item)
 
@@ -157,7 +159,7 @@ class AdvancedAttributeDialog(QDialog):
             self.selected_token = cur.data(Qt.ItemDataRole.UserRole)
             self.accept()
         else:
-            QMessageBox.warning(self, "No Selection", "Please select an attribute or type a custom token.")
+            QMessageBox.warning(self, tr("title_no_selection"), tr("msg_no_selection"))
 
 
 class UdevMainWindow(QMainWindow):
@@ -168,9 +170,9 @@ class UdevMainWindow(QMainWindow):
     def __init__(self, rules_dir: str = DEFAULT_RULES_DIR):
         super().__init__()
         self.rules_dir = rules_dir
-        self.setWindowTitle("udev Rule Manager & Builder")
-        self.resize(1180, 820)
-        self.setMinimumSize(960, 680)
+        self.setWindowTitle(tr("window_title"))
+        self.resize(1280, 720)
+        self.setMinimumSize(920, 620)
 
         self.current_file_path: str = ""
         self.rules: list[UdevRule] = []
@@ -185,22 +187,23 @@ class UdevMainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
 
         # 1. Top Live Preview Banner
         self.preview_banner = LivePreviewBanner(
-            title="Udev Rule Preview",
-            subtitle="Editing properties below changes this rule string instantaneously. Hover options to learn what they do.",
+            title=tr("preview_title"),
+            subtitle=tr("preview_subtitle"),
         )
         self.preview_banner.diffRequested.connect(self._inspect_diff)
         layout.addWidget(self.preview_banner)
 
         # 2. File Selection Bar with Package Ownership Inspector
         file_bar = QHBoxLayout()
-        file_bar.addWidget(QLabel("Rule File:"))
+        file_bar.setSpacing(8)
+        file_bar.addWidget(QLabel(tr("lbl_rule_file")))
         self.cmb_files = QComboBox()
-        self.cmb_files.setMinimumWidth(320)
+        self.cmb_files.setMinimumWidth(300)
         self.cmb_files.currentIndexChanged.connect(self._on_file_selected)
         file_bar.addWidget(self.cmb_files)
 
@@ -208,18 +211,18 @@ class UdevMainWindow(QMainWindow):
         self.package_badge = PackageOwnershipBadge()
         file_bar.addWidget(self.package_badge)
 
-        btn_new_file = QPushButton("New File")
+        btn_new_file = QPushButton(tr("btn_new_file"))
         btn_new_file.clicked.connect(self._create_new_rule_file)
         file_bar.addWidget(btn_new_file)
 
         file_bar.addStretch()
 
-        btn_reload_daemon = QPushButton("Reload && Trigger (udevadm)")
+        btn_reload_daemon = QPushButton(tr("btn_reload_daemon"))
         btn_reload_daemon.setToolTip(format_tooltip(
-            "Reload Kernel Udev Rules",
-            "udevadm control --reload-rules && udevadm trigger",
-            "Notifies systemd-udevd to reload rules from /etc/udev/rules.d and replays device events so new permissions take effect immediately.",
-            "Recommended after changes",
+            tr("tooltip_reload_daemon_title"),
+            tr("tooltip_reload_daemon_cmd"),
+            tr("tooltip_reload_daemon_desc"),
+            tr("tooltip_reload_daemon_impact"),
         ))
         btn_reload_daemon.clicked.connect(self._trigger_udevadm_reload)
         file_bar.addWidget(btn_reload_daemon)
@@ -230,7 +233,13 @@ class UdevMainWindow(QMainWindow):
         splitter = QSplitter(Qt.Orientation.Vertical)
 
         self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["Action", "Subsystem", "Match Attributes", "Permissions / Mode", "Advanced / Extra Attributes"])
+        self.table.setHorizontalHeaderLabels([
+            tr("col_action"),
+            tr("col_subsystem"),
+            tr("col_match"),
+            tr("col_permissions"),
+            tr("col_advanced"),
+        ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
@@ -246,66 +255,66 @@ class UdevMainWindow(QMainWindow):
 
         form_widget = QWidget()
         form_layout = QVBoxLayout(form_widget)
-        form_layout.setContentsMargins(4, 6, 4, 6)
-        form_layout.setSpacing(10)
+        form_layout.setContentsMargins(4, 4, 4, 4)
+        form_layout.setSpacing(8)
 
         # Match Conditions Group
-        match_group = QGroupBox("Device Match Conditions (Keys using ==)")
+        match_group = QGroupBox(tr("group_match_conditions"))
         match_grid = QGridLayout(match_group)
-        match_grid.setSpacing(8)
+        match_grid.setSpacing(6)
 
-        match_grid.addWidget(QLabel("SUBSYSTEM=="), 0, 0)
+        match_grid.addWidget(QLabel(tr("lbl_subsystem")), 0, 0)
         self.cmb_subsystem = QComboBox()
         self.cmb_subsystem.setEditable(True)
         self.cmb_subsystem.addItems(["", "usb", "tty", "input", "net", "block", "sound", "drm", "hid", "hidraw", "misc"])
         self.cmb_subsystem.setToolTip(format_tooltip(
-            "Subsystem Match",
-            'SUBSYSTEM=="usb"',
-            "Filters events based on the kernel subsystem providing the device.<br><br><b>Can be blank</b> If blank, this rule matches devices across all kernel subsystems.",
+            tr("tooltip_subsystem_title"),
+            tr("tooltip_subsystem_syntax"),
+            tr("tooltip_subsystem_desc"),
         ))
         self.cmb_subsystem.currentTextChanged.connect(self._on_rule_modified)
         match_grid.addWidget(self.cmb_subsystem, 0, 1)
 
-        match_grid.addWidget(QLabel("ACTION=="), 0, 2)
+        match_grid.addWidget(QLabel(tr("lbl_action")), 0, 2)
         self.cmb_action = QComboBox()
         self.cmb_action.addItems(["", "add", "remove", "change", "bind", "unbind"])
         self.cmb_action.setToolTip(format_tooltip(
-            "Action Match",
-            'ACTION=="add"',
-            "Specifies the kernel event type.<br><br><b>Can be blank</b> If blank, the rule triggers for ALL events (add, remove, change). Specifying 'add' triggers only on device plug-in.",
+            tr("tooltip_action_title"),
+            tr("tooltip_action_syntax"),
+            tr("tooltip_action_desc"),
         ))
         self.cmb_action.currentTextChanged.connect(self._on_rule_modified)
         match_grid.addWidget(self.cmb_action, 0, 3)
 
-        match_grid.addWidget(QLabel("ATTR{idVendor}=="), 1, 0)
+        match_grid.addWidget(QLabel(tr("lbl_vendor")), 1, 0)
         self.txt_vendor = QLineEdit()
-        self.txt_vendor.setPlaceholderText("e.g. 504b or 0483 (find with lsusb)")
+        self.txt_vendor.setPlaceholderText(tr("placeholder_vendor"))
         self.txt_vendor.setToolTip(format_tooltip(
-            "Vendor ID Match",
-            'ATTR{idVendor}=="xxxx"',
-            "4-digit hexadecimal USB Vendor ID from 'lsusb'.<br><br><b>Can be blank</b> If blank, applies to devices from all manufacturers.",
+            tr("tooltip_vendor_title"),
+            tr("tooltip_vendor_syntax"),
+            tr("tooltip_vendor_desc"),
         ))
         self.txt_vendor.textChanged.connect(self._on_rule_modified)
         match_grid.addWidget(self.txt_vendor, 1, 1)
 
-        match_grid.addWidget(QLabel("ATTR{idProduct}=="), 1, 2)
+        match_grid.addWidget(QLabel(tr("lbl_product")), 1, 2)
         self.txt_product = QLineEdit()
-        self.txt_product.setPlaceholderText("e.g. 320f or 5740")
+        self.txt_product.setPlaceholderText(tr("placeholder_product"))
         self.txt_product.setToolTip(format_tooltip(
-            "Product ID Match",
-            'ATTR{idProduct}=="xxxx"',
-            "4-digit hexadecimal USB Product ID.<br><br><b>Can be blank</b> If blank, applies to any model from the specified vendor.",
+            tr("tooltip_product_title"),
+            tr("tooltip_product_syntax"),
+            tr("tooltip_product_desc"),
         ))
         self.txt_product.textChanged.connect(self._on_rule_modified)
         match_grid.addWidget(self.txt_product, 1, 3)
 
-        match_grid.addWidget(QLabel("KERNEL=="), 2, 0)
+        match_grid.addWidget(QLabel(tr("lbl_kernel")), 2, 0)
         self.txt_kernel = QLineEdit()
-        self.txt_kernel.setPlaceholderText("e.g. ttyUSB*, hidraw*, sd*")
+        self.txt_kernel.setPlaceholderText(tr("placeholder_kernel"))
         self.txt_kernel.setToolTip(format_tooltip(
-            "Kernel Name Filter",
-            'KERNEL=="ttyUSB*"',
-            "Matches kernel device node name with wildcards (*).<br><br><b>Can be blank</b> If blank, does not restrict by kernel node name.",
+            tr("tooltip_kernel_title"),
+            tr("tooltip_kernel_syntax"),
+            tr("tooltip_kernel_desc"),
         ))
         self.txt_kernel.textChanged.connect(self._on_rule_modified)
         match_grid.addWidget(self.txt_kernel, 2, 1)
@@ -313,53 +322,53 @@ class UdevMainWindow(QMainWindow):
         form_layout.addWidget(match_group)
 
         # Assignment Actions Group
-        assign_group = QGroupBox("Permissions & Identifiers (Keys using = or +=)")
+        assign_group = QGroupBox(tr("group_permissions"))
         assign_grid = QGridLayout(assign_group)
-        assign_grid.setSpacing(8)
+        assign_grid.setSpacing(6)
 
-        assign_grid.addWidget(QLabel('MODE="...":'), 0, 0)
+        assign_grid.addWidget(QLabel(tr("lbl_mode")), 0, 0)
         self.cmb_mode = QComboBox()
         self.cmb_mode.setEditable(True)
         self.cmb_mode.addItems(["", "0666", "0660", "0600"])
         self.cmb_mode.setToolTip(format_tooltip(
-            "File Mode Permission",
-            'MODE="0666"',
-            "Sets file permissions for device node.<br><br><b>Can be blank</b> If blank, leaves default kernel permission (usually 0600 root-only).",
-            "Caution for 0666",
+            tr("tooltip_mode_title"),
+            tr("tooltip_mode_syntax"),
+            tr("tooltip_mode_desc"),
+            tr("tooltip_mode_impact"),
         ))
         self.cmb_mode.currentTextChanged.connect(self._on_rule_modified)
         assign_grid.addWidget(self.cmb_mode, 0, 1)
 
-        assign_grid.addWidget(QLabel('GROUP="...":'), 0, 2)
+        assign_grid.addWidget(QLabel(tr("lbl_group")), 0, 2)
         self.cmb_group = QComboBox()
         self.cmb_group.setEditable(True)
         self.cmb_group.addItems(["", "plugdev", "dialout", "input", "audio", "video"])
         self.cmb_group.setToolTip(format_tooltip(
-            "Owning Group",
-            'GROUP="plugdev"',
-            "Assigns device group ownership.<br><br><b>Can be blank</b> If blank, the device node remains owned by the root group.",
-            "Recommended",
+            tr("tooltip_group_title"),
+            tr("tooltip_group_syntax"),
+            tr("tooltip_group_desc"),
+            tr("tooltip_group_impact"),
         ))
         self.cmb_group.currentTextChanged.connect(self._on_rule_modified)
         assign_grid.addWidget(self.cmb_group, 0, 3)
 
-        self.chk_uaccess = QCheckBox('TAG+="uaccess" (Allow active logged-in desktop user)')
+        self.chk_uaccess = QCheckBox(tr("chk_uaccess"))
         self.chk_uaccess.setToolTip(format_tooltip(
-            "systemd User Access Tag",
-            'TAG+="uaccess"',
-            "Modern systemd mechanism: dynamically grants read/write permissions to whoever is currently active on the desktop seat without group setup.",
-            "Recommended for desktop Linux",
+            tr("tooltip_uaccess_title"),
+            tr("tooltip_uaccess_syntax"),
+            tr("tooltip_uaccess_desc"),
+            tr("tooltip_uaccess_impact"),
         ))
         self.chk_uaccess.toggled.connect(self._on_rule_modified)
         assign_grid.addWidget(self.chk_uaccess, 1, 0, 1, 2)
 
-        assign_grid.addWidget(QLabel('SYMLINK+='), 1, 2)
+        assign_grid.addWidget(QLabel(tr("lbl_symlink")), 1, 2)
         self.txt_symlink = QLineEdit()
-        self.txt_symlink.setPlaceholderText("e.g. my_custom_device")
+        self.txt_symlink.setPlaceholderText(tr("placeholder_symlink"))
         self.txt_symlink.setToolTip(format_tooltip(
-            "Persistent Symlink Alias",
-            'SYMLINK+="custom_device"',
-            "Creates a static alias in /dev/ pointing to this device.<br><br><b>Can be blank</b> If blank, no custom symlink is created.",
+            tr("tooltip_symlink_title"),
+            tr("tooltip_symlink_syntax"),
+            tr("tooltip_symlink_desc"),
         ))
         self.txt_symlink.textChanged.connect(self._on_rule_modified)
         assign_grid.addWidget(self.txt_symlink, 1, 3)
@@ -367,27 +376,28 @@ class UdevMainWindow(QMainWindow):
         form_layout.addWidget(assign_group)
 
         # Advanced / Extra Attributes Group (Wakeup, Power, Custom Options)
-        adv_group = QGroupBox("Advanced Attributes & Custom Rules (e.g. Wakeup, Power Management, Options)")
+        adv_group = QGroupBox(tr("group_advanced"))
         adv_layout = QVBoxLayout(adv_group)
+        adv_layout.setSpacing(6)
 
         adv_bar = QHBoxLayout()
-        self.lbl_extra_count = QLabel("Active Extra Attributes on Selected Rule:")
-        self.lbl_extra_count.setStyleSheet("color: #89b4fa; font-weight: bold;")
+        self.lbl_extra_count = QLabel(tr("lbl_extra_count"))
+        self.lbl_extra_count.setStyleSheet("color: #6899e6; font-weight: bold; font-size: 11px;")
         adv_bar.addWidget(self.lbl_extra_count)
         adv_bar.addStretch()
 
-        btn_add_adv = QPushButton("Search && Add Advanced Attribute (e.g. Wakeup, Power)...")
-        btn_add_adv.setToolTip("Search catalog of common advanced attributes including disabling sleep wakeup from keyboards/mice, autosuspend, and custom tokens.")
+        btn_add_adv = QPushButton(tr("btn_add_adv"))
+        btn_add_adv.setToolTip(tr("tooltip_add_adv"))
         btn_add_adv.clicked.connect(self._open_advanced_dialog)
         adv_bar.addWidget(btn_add_adv)
         adv_layout.addLayout(adv_bar)
 
         self.tbl_extras = QTableWidget(0, 2)
-        self.tbl_extras.setHorizontalHeaderLabels(["Attribute / Directive", "Action"])
+        self.tbl_extras.setHorizontalHeaderLabels([tr("col_extra_directive"), tr("col_extra_action")])
         self.tbl_extras.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.tbl_extras.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-        self.tbl_extras.setColumnWidth(1, 100)
-        self.tbl_extras.setFixedHeight(120)
+        self.tbl_extras.setColumnWidth(1, 90)
+        self.tbl_extras.setFixedHeight(110)
         adv_layout.addWidget(self.tbl_extras)
 
         form_layout.addWidget(adv_group)
@@ -398,17 +408,18 @@ class UdevMainWindow(QMainWindow):
 
         # Bottom Action Bar
         action_bar = QHBoxLayout()
-        btn_add_rule = QPushButton("Add New Rule")
+        action_bar.setSpacing(8)
+        btn_add_rule = QPushButton(tr("btn_add_rule"))
         btn_add_rule.clicked.connect(self._add_new_rule)
         action_bar.addWidget(btn_add_rule)
 
-        btn_del_rule = QPushButton("Remove Selected")
+        btn_del_rule = QPushButton(tr("btn_remove_rule"))
         btn_del_rule.clicked.connect(self._remove_selected_rule)
         action_bar.addWidget(btn_del_rule)
 
         action_bar.addStretch()
 
-        btn_save = QPushButton("Save && Apply Rule File")
+        btn_save = QPushButton(tr("btn_save_rules"))
         btn_save.setObjectName("primaryBtn")
         btn_save.clicked.connect(self._save_rules_file)
         action_bar.addWidget(btn_save)
@@ -454,13 +465,13 @@ class UdevMainWindow(QMainWindow):
             if rule.is_comment or not rule.to_line().strip():
                 continue
             self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(rule.action or "(all)"))
-            self.table.setItem(row, 1, QTableWidgetItem(rule.subsystem or "(all)"))
+            self.table.setItem(row, 0, QTableWidgetItem(rule.action or tr("val_all")))
+            self.table.setItem(row, 1, QTableWidgetItem(rule.subsystem or tr("val_all")))
             match_str = f"Vendor={rule.vendor_id or '*'} Product={rule.product_id or '*'} Kernel={rule.kernel or '*'}"
             self.table.setItem(row, 2, QTableWidgetItem(match_str))
             perm_str = f"Mode={rule.mode or 'def'} Group={rule.group or 'root'} uaccess={rule.tag_uaccess}"
             self.table.setItem(row, 3, QTableWidgetItem(perm_str))
-            extra_str = ", ".join(rule.extra_tokens) if rule.extra_tokens else "(none)"
+            extra_str = ", ".join(rule.extra_tokens) if rule.extra_tokens else tr("val_none")
             self.table.setItem(row, 4, QTableWidgetItem(extra_str))
             self.table.item(row, 0).setData(Qt.ItemDataRole.UserRole, rule)
             row += 1
@@ -498,7 +509,8 @@ class UdevMainWindow(QMainWindow):
         for idx, token in enumerate(rule.extra_tokens):
             self.tbl_extras.insertRow(idx)
             self.tbl_extras.setItem(idx, 0, QTableWidgetItem(token))
-            btn_del = QPushButton("❌ Remove")
+            btn_del = QPushButton(tr("btn_remove_extra"))
+            btn_del.setStyleSheet("font-size: 11px; padding: 2px 6px;")
             btn_del.clicked.connect(lambda _, t=token: self._remove_extra_token(t))
             self.tbl_extras.setCellWidget(idx, 1, btn_del)
 
@@ -516,7 +528,7 @@ class UdevMainWindow(QMainWindow):
     def _open_advanced_dialog(self) -> None:
         selected = self.table.selectedItems()
         if not selected:
-            QMessageBox.warning(self, "No Rule Selected", "Please select a rule from the table first.")
+            QMessageBox.warning(self, tr("title_no_rule_selected"), tr("msg_select_rule_first"))
             return
         row = selected[0].row()
         rule: UdevRule = self.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
@@ -549,11 +561,11 @@ class UdevMainWindow(QMainWindow):
 
         # Update table row text
         self._is_updating_ui = True
-        self.table.item(row, 0).setText(rule.action or "(all)")
-        self.table.item(row, 1).setText(rule.subsystem or "(all)")
+        self.table.item(row, 0).setText(rule.action or tr("val_all"))
+        self.table.item(row, 1).setText(rule.subsystem or tr("val_all"))
         self.table.item(row, 2).setText(f"Vendor={rule.vendor_id or '*'} Product={rule.product_id or '*'} Kernel={rule.kernel or '*'}")
         self.table.item(row, 3).setText(f"Mode={rule.mode or 'def'} Group={rule.group or 'root'} uaccess={rule.tag_uaccess}")
-        extra_str = ", ".join(rule.extra_tokens) if rule.extra_tokens else "(none)"
+        extra_str = ", ".join(rule.extra_tokens) if rule.extra_tokens else tr("val_none")
         self.table.item(row, 4).setText(extra_str)
         self._is_updating_ui = False
 
@@ -598,16 +610,19 @@ class UdevMainWindow(QMainWindow):
         notes = []
         if self.current_ownership.is_managed:
             notes.append(
-                f"⚠️ CAUTION: Managed by package '{self.current_ownership.package_name}' ({self.current_ownership.package_manager}). "
-                "Editing this file may cause conflict warnings or be overwritten on package upgrade."
+                tr(
+                    "note_managed_file",
+                    pkg=self.current_ownership.package_name,
+                    manager=self.current_ownership.package_manager,
+                )
             )
         else:
-            notes.append("✓ Unmanaged configuration file. Safe for user edits.")
+            notes.append(tr("note_unmanaged_file"))
 
         dlg = SafetyExecutionDialog(
-            title="Inspect Udev File Changes",
+            title=tr("dialog_diff_title"),
             target_path_or_command=self.current_file_path,
-            diff_text=diff if diff.strip() else "# No changes",
+            diff_text=diff if diff.strip() else tr("diff_no_changes"),
             safety_notes=notes,
             parent=self,
         )
@@ -616,46 +631,47 @@ class UdevMainWindow(QMainWindow):
     def _trigger_udevadm_reload(self) -> None:
         cmd = "udevadm control --reload-rules && udevadm trigger"
         dlg = SafetyExecutionDialog(
-            title="Reload Udev Rules",
+            title=tr("dialog_reload_title"),
             target_path_or_command=cmd,
             safety_notes=[
-                "Reloads rules into memory in systemd-udevd.",
-                "Triggers kernel device event replays so permissions take effect.",
+                tr("note_reload_rules"),
+                tr("note_trigger_events"),
             ],
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = SafeExecutor.run_command(["bash", "-c", cmd], elevated=True)
             if res.success:
-                QMessageBox.information(self, "Reloaded", "udev daemon reloaded and events triggered successfully!")
+                QMessageBox.information(self, tr("title_reloaded"), tr("msg_reload_success"))
             else:
-                QMessageBox.critical(self, "Reload Failed", f"Failed:\n{res.stderr}")
+                QMessageBox.critical(self, tr("title_reload_failed"), tr("msg_reload_failed", error=res.stderr))
 
     def _save_rules_file(self) -> None:
         new_content = "\n".join(r.to_line() for r in self.rules) + "\n"
         diff = generate_diff(self.original_raw, new_content, os.path.basename(self.current_file_path))
 
         notes = [
-            "Writes file with elevated privileges (pkexec).",
-            "Automatic timestamped backup will be created.",
+            tr("note_save_elevated"),
+            tr("note_save_backup"),
         ]
         if self.current_ownership.is_managed:
-            notes.insert(0, (
-                f"⚠️ WARNING: This file is tracked by package '{self.current_ownership.package_name}' "
-                f"({self.current_ownership.package_manager}). Modifying it directly may cause update conflicts!"
+            notes.insert(0, tr(
+                "note_save_pkg_warning",
+                pkg=self.current_ownership.package_name,
+                manager=self.current_ownership.package_manager,
             ))
 
         dlg = SafetyExecutionDialog(
-            title="Save Udev Rules",
+            title=tr("dialog_save_title"),
             target_path_or_command=self.current_file_path,
-            diff_text=diff if diff.strip() else "# No differences detected",
+            diff_text=diff if diff.strip() else tr("diff_no_diff"),
             safety_notes=notes,
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = SafeExecutor.safe_write_system_file(self.current_file_path, new_content)
             if res.success:
-                QMessageBox.information(self, "Saved", f"Rules saved!\nBackup: {res.backup_file}")
+                QMessageBox.information(self, tr("title_saved"), tr("msg_saved_success", backup=res.backup_file))
                 self._on_file_selected()
             else:
-                QMessageBox.critical(self, "Error Saving", f"Failed:\n{res.stderr}")
+                QMessageBox.critical(self, tr("title_error_saving"), tr("msg_saved_failed", error=res.stderr))

@@ -16,6 +16,7 @@ dependencies = [
     "sysctl-gui",
     "permissions-gui",
     "bootloader-gui",
+    "device-gui",
     "linux-system-guis-launcher",
 ]
 
@@ -39,6 +40,7 @@ journal-gui = { workspace = true }
 sysctl-gui = { workspace = true }
 permissions-gui = { workspace = true }
 bootloader-gui = { workspace = true }
+device-gui = { workspace = true }
 linux-system-guis-launcher = { workspace = true }
 
 [dependency-groups]
@@ -62,5 +64,6 @@ pythonpath = [
     "apps/sysctl-gui/src",
     "apps/permissions-gui/src",
     "apps/bootloader-gui/src",
+    "apps/device-gui/src",
     "apps/launcher/src",
 ]

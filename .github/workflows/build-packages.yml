@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p dist
           uv run python -m build --wheel --outdir dist packages/core
-          for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui; do
+          for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui device-gui; do
             uv run python -m build --wheel --outdir dist "apps/$app"
           done
 

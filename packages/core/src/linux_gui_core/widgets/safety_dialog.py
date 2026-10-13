@@ -14,10 +14,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from linux_gui_core.strings import tr
+
 
 class SafetyExecutionDialog(QDialog):
     """Modal that enforces transparency: shows the exact command or file modification
-
     with side-by-side or unified diff, safety check explanations, and dry-run execution.
     """
 
@@ -31,29 +32,30 @@ class SafetyExecutionDialog(QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle(title)
-        self.setMinimumSize(680, 480)
+        self.setMinimumSize(640, 440)
         self.setStyleSheet(
             """
             QDialog {
-                background-color: #1e1e2e;
-                color: #cdd6f4;
+                background-color: #1e1f22;
+                color: #e3e5e8;
             }
             """
         )
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
 
         # Header warning / info badge
-        banner = QLabel(f"⚠️ <b>Review System Changes</b><br>Target: <code>{target_path_or_command}</code>")
+        banner = QLabel(tr("safety_review_header", target=target_path_or_command))
         banner.setStyleSheet(
             """
             QLabel {
-                background-color: #313244;
-                border-left: 4px solid #f9e2af;
-                padding: 10px;
-                border-radius: 6px;
-                color: #cdd6f4;
+                background-color: #26282d;
+                border-left: 3px solid #d49a3d;
+                padding: 6px 8px;
+                border-radius: 3px;
+                color: #e3e5e8;
             }
             """
         )
@@ -61,19 +63,30 @@ class SafetyExecutionDialog(QDialog):
 
         # Safety Notes / Explanations
         if safety_notes:
-            notes_html = "<b>Safety Protections:</b><ul>" + "".join(f"<li>{n}</li>" for n in safety_notes) + "</ul>"
+            notes_html = f"<b>{tr('safety_protections_heading')}</b><ul>" + "".join(f"<li>{n}</li>" for n in safety_notes) + "</ul>"
             notes_lbl = QLabel(notes_html)
-            notes_lbl.setStyleSheet("color: #a6adc8; font-size: 12px;")
+            notes_lbl.setStyleSheet("color: #9498a1; font-size: 11px;")
             notes_lbl.setWordWrap(True)
             layout.addWidget(notes_lbl)
 
         # Diff or Command viewer
-        lbl_preview = QLabel("Planned Changes / Command Execution:")
-        lbl_preview.setStyleSheet("font-weight: bold; color: #89b4fa;")
+        lbl_preview = QLabel(tr("safety_preview_label"))
+        lbl_preview.setStyleSheet("font-weight: bold; color: #6899e6; font-size: 12px;")
         layout.addWidget(lbl_preview)
 
         self.text_preview = QTextEdit()
         self.text_preview.setReadOnly(True)
+        self.text_preview.setStyleSheet(
+            """
+            QTextEdit {
+                background-color: #18191c;
+                border: 1px solid #2d3036;
+                border-radius: 3px;
+                padding: 6px;
+                color: #e3e5e8;
+            }
+            """
+        )
         mono_font = QFont("JetBrains Mono", 10)
         mono_font.setStyleHint(QFont.StyleHint.Monospace)
         self.text_preview.setFont(mono_font)
@@ -87,7 +100,8 @@ class SafetyExecutionDialog(QDialog):
 
         # Buttons
         btn_layout = QHBoxLayout()
-        btn_copy = QPushButton("📋 Copy Command")
+        btn_layout.setSpacing(8)
+        btn_copy = QPushButton(tr("safety_btn_copy"))
         btn_copy.clicked.connect(self._copy_command)
         btn_layout.addWidget(btn_copy)
 
@@ -97,7 +111,7 @@ class SafetyExecutionDialog(QDialog):
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         btn_apply = self.btn_box.button(QDialogButtonBox.StandardButton.Ok)
-        btn_apply.setText("Apply Changes (Requires Root)")
+        btn_apply.setText(tr("safety_btn_apply"))
         btn_apply.setObjectName("primaryBtn")
         self.btn_box.accepted.connect(self.accept)
         self.btn_box.rejected.connect(self.reject)
@@ -111,13 +125,13 @@ class SafetyExecutionDialog(QDialog):
         for line in diff_text.splitlines():
             escaped = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             if line.startswith("+"):
-                html_lines.append(f"<span style='color: #a6e3a1; background-color: #1e3a2f;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #3ba55d; background-color: #162c1e;'>{escaped}</span>")
             elif line.startswith("-"):
-                html_lines.append(f"<span style='color: #f38ba8; background-color: #3f1d28;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #d83a52; background-color: #33151b;'>{escaped}</span>")
             elif line.startswith("@"):
-                html_lines.append(f"<span style='color: #89b4fa; font-weight: bold;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #6899e6; font-weight: bold;'>{escaped}</span>")
             else:
-                html_lines.append(f"<span style='color: #cdd6f4;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #e3e5e8;'>{escaped}</span>")
 
         self.text_preview.setHtml("<br>".join(html_lines))
 

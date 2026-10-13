@@ -2,6 +2,8 @@ linux_gui_core linux-system-guis
 linux-gui-core linux-system-guis
 bootloader_gui linux-system-guis
 bootloader-gui linux-system-guis
+device_gui linux-system-guis
+device-gui linux-system-guis
 fstab_gui linux-system-guis
 fstab-gui linux-system-guis
 journal_gui linux-system-guis

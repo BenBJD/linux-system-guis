@@ -7,7 +7,7 @@ export PYBUILD_NAME=linux-system-guis
 override_dh_auto_build:
 	mkdir -p debian/dist
 	python3 -m build --wheel --no-isolation --outdir debian/dist packages/core
-	for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui; do \
+	for app in launcher fstab-gui udev-gui systemd-gui usermgmt-gui sudoers-gui journal-gui sysctl-gui permissions-gui bootloader-gui device-gui; do \
 		python3 -m build --wheel --no-isolation --outdir debian/dist apps/$$app ; \
 	done
 

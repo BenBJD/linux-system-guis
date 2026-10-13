@@ -32,6 +32,7 @@ from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog, generate_diff
 from linux_gui_core.widgets.tooltips import format_tooltip
 from fstab_gui.parser import FstabEntry, FstabParser
+from fstab_gui.strings import tr
 
 
 ADVANCED_FSTAB_OPTIONS = [
@@ -137,18 +138,19 @@ class AdvancedFstabOptionDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Search & Add Advanced / systemd Mount Option")
-        self.resize(680, 480)
+        self.setWindowTitle(tr("dlg_adv_title"))
+        self.resize(640, 440)
         self.selected_option: str = ""
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(10)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
 
         # Search bar
         search_layout = QHBoxLayout()
-        search_layout.addWidget(QLabel("Search Options:"))
+        search_layout.addWidget(QLabel(tr("lbl_search_options")))
         self.txt_search = QLineEdit()
-        self.txt_search.setPlaceholderText("Search 'automount', 'network', 'timeout', 'compress', 'btrfs'...")
+        self.txt_search.setPlaceholderText(tr("placeholder_search_adv"))
         self.txt_search.textChanged.connect(self._filter_list)
         search_layout.addWidget(self.txt_search)
         layout.addLayout(search_layout)
@@ -160,10 +162,10 @@ class AdvancedFstabOptionDialog(QDialog):
         layout.addWidget(self.list_widget)
 
         # Custom entry
-        custom_box = QGroupBox("Or Enter Custom Mount Option")
+        custom_box = QGroupBox(tr("group_custom_option"))
         c_layout = QHBoxLayout(custom_box)
         self.txt_custom = QLineEdit()
-        self.txt_custom.setPlaceholderText("e.g. x-systemd.automount or subvol=@var or umask=077")
+        self.txt_custom.setPlaceholderText(tr("placeholder_custom_option"))
         c_layout.addWidget(self.txt_custom)
         layout.addWidget(custom_box)
 
@@ -202,7 +204,7 @@ class AdvancedFstabOptionDialog(QDialog):
             self.selected_option = cur.data(Qt.ItemDataRole.UserRole)
             self.accept()
         else:
-            QMessageBox.warning(self, "No Selection", "Please choose an option from the list or enter a custom one.")
+            QMessageBox.warning(self, tr("title_no_selection"), tr("msg_no_option_selected"))
 
 
 class FstabMainWindow(QMainWindow):
@@ -225,9 +227,9 @@ class FstabMainWindow(QMainWindow):
     def __init__(self, fstab_path: str = "/etc/fstab"):
         super().__init__()
         self.fstab_path = fstab_path
-        self.setWindowTitle(f"fstab Editor - {self.fstab_path}")
-        self.resize(1180, 820)
-        self.setMinimumSize(960, 680)
+        self.setWindowTitle(tr("window_title", path=self.fstab_path))
+        self.resize(1280, 720)
+        self.setMinimumSize(920, 620)
 
         self.entries: list[FstabEntry] = []
         self.original_raw: str = ""
@@ -240,20 +242,20 @@ class FstabMainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(16, 16, 16, 16)
-        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(12, 10, 12, 10)
+        main_layout.setSpacing(8)
 
         # 1. Top Live Preview Banner
         self.preview_banner = LivePreviewBanner(
-            title="/etc/fstab entry preview",
-            subtitle="The line below updates as you toggle options. Hover over options for safety & command tooltips.",
+            title=tr("preview_title"),
+            subtitle=tr("preview_subtitle"),
         )
         self.preview_banner.diffRequested.connect(self._inspect_file_diff)
         main_layout.addWidget(self.preview_banner)
 
         # File header with Package Ownership Badge
         header_bar = QHBoxLayout()
-        header_bar.addWidget(QLabel(f"Target File: <code>{self.fstab_path}</code>"))
+        header_bar.addWidget(QLabel(tr("lbl_target_file", path=self.fstab_path)))
         header_bar.addStretch()
         main_layout.addLayout(header_bar)
 
@@ -263,12 +265,12 @@ class FstabMainWindow(QMainWindow):
         # Table of entries
         self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels([
-            "Device / UUID",
-            "Mount Point",
-            "Filesystem",
-            "Options",
-            "Dump",
-            "Pass",
+            tr("col_device"),
+            tr("col_mount_point"),
+            tr("col_filesystem"),
+            tr("col_options"),
+            tr("col_dump"),
+            tr("col_pass"),
         ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
@@ -285,44 +287,44 @@ class FstabMainWindow(QMainWindow):
 
         form_container = QWidget()
         form_layout = QVBoxLayout(form_container)
-        form_layout.setContentsMargins(4, 6, 4, 6)
-        form_layout.setSpacing(10)
+        form_layout.setContentsMargins(4, 4, 4, 4)
+        form_layout.setSpacing(8)
 
         # Entry Parameters Box
-        params_group = QGroupBox("Selected Entry Properties")
+        params_group = QGroupBox(tr("group_entry_properties"))
         params_grid = QGridLayout(params_group)
-        params_grid.setSpacing(8)
+        params_grid.setSpacing(6)
 
         # Device / Spec
-        params_grid.addWidget(QLabel("Device / UUID / LABEL:"), 0, 0)
+        params_grid.addWidget(QLabel(tr("lbl_device")), 0, 0)
         self.txt_spec = QLineEdit()
-        self.txt_spec.setPlaceholderText("e.g. UUID=3a7b-..., LABEL=Data, /dev/sdb1")
+        self.txt_spec.setPlaceholderText(tr("placeholder_device"))
         self.txt_spec.setToolTip(format_tooltip(
-            "Filesystem Specification",
-            "UUID=... or LABEL=... or /dev/...",
-            "Identifies the disk partition. Using UUID is strongly recommended because device names like /dev/sda can change across reboots.<br><br><b>Cannot be blank</b>. Must identify a partition.",
-            "Recommended: UUID",
-            "UUID=1234-ABCD",
+            tr("tooltip_fs_spec_title"),
+            tr("tooltip_fs_spec_syntax"),
+            tr("tooltip_fs_spec_desc"),
+            tr("tooltip_fs_spec_safety"),
+            tr("tooltip_fs_spec_example"),
         ))
         self.txt_spec.textChanged.connect(self._on_entry_modified)
         params_grid.addWidget(self.txt_spec, 0, 1)
 
         # Mount point
-        params_grid.addWidget(QLabel("Mount Point:"), 0, 2)
+        params_grid.addWidget(QLabel(tr("lbl_mount_point")), 0, 2)
         self.txt_mount = QLineEdit()
-        self.txt_mount.setPlaceholderText("e.g. /, /home, /mnt/storage")
+        self.txt_mount.setPlaceholderText(tr("placeholder_mount_point"))
         self.txt_mount.setToolTip(format_tooltip(
-            "Mount Point",
-            "/path/to/folder",
-            "The directory in the root hierarchy where the filesystem is made accessible (or 'none' for swap).<br><br><b>Cannot be blank</b>.",
-            "Required directory",
-            "/mnt/data",
+            tr("tooltip_mount_title"),
+            tr("tooltip_mount_syntax"),
+            tr("tooltip_mount_desc"),
+            tr("tooltip_mount_safety"),
+            tr("tooltip_mount_example"),
         ))
         self.txt_mount.textChanged.connect(self._on_entry_modified)
         params_grid.addWidget(self.txt_mount, 0, 3)
 
         # Filesystem Type
-        params_grid.addWidget(QLabel("Filesystem Type:"), 1, 0)
+        params_grid.addWidget(QLabel(tr("lbl_fs_type")), 1, 0)
         self.cmb_fstype = QComboBox()
         self.cmb_fstype.setEditable(True)
         self.cmb_fstype.addItems(["ext4", "btrfs", "xfs", "vfat", "ntfs3", "exfat", "swap", "nfs", "auto"])
@@ -331,21 +333,25 @@ class FstabMainWindow(QMainWindow):
 
         # Dump & Pass
         spin_layout = QHBoxLayout()
-        spin_layout.addWidget(QLabel("Dump:"))
+        spin_layout.addWidget(QLabel(tr("lbl_dump")))
         self.spn_dump = QSpinBox()
         self.spn_dump.setRange(0, 1)
-        self.spn_dump.setToolTip(format_tooltip("Dump Flag", "0 or 1", "Used by dump utility to backup filesystem. Rarely used on modern Linux; defaults to 0.<br><br><b>Cannot be blank</b>"))
+        self.spn_dump.setToolTip(format_tooltip(
+            tr("tooltip_dump_title"),
+            tr("tooltip_dump_syntax"),
+            tr("tooltip_dump_desc"),
+        ))
         self.spn_dump.valueChanged.connect(self._on_entry_modified)
         spin_layout.addWidget(self.spn_dump)
 
-        spin_layout.addWidget(QLabel("Pass:"))
+        spin_layout.addWidget(QLabel(tr("lbl_pass")))
         self.spn_pass = QSpinBox()
         self.spn_pass.setRange(0, 2)
         self.spn_pass.setToolTip(format_tooltip(
-            "Fsck Pass Order",
-            "0 (skip), 1 (root partition), 2 (other partitions)",
-            "Determines the order in which filesystem checks are done at reboot time.<br><br><b>Cannot be blank</b>.",
-            "Safer to use 1 for root (/), 2 for other local drives, 0 for swap/network. Use 0 for xfs and btrfs mounts.",
+            tr("tooltip_pass_title"),
+            tr("tooltip_pass_syntax"),
+            tr("tooltip_pass_desc"),
+            tr("tooltip_pass_safety"),
         ))
         self.spn_pass.valueChanged.connect(self._on_entry_modified)
         spin_layout.addWidget(self.spn_pass)
@@ -354,14 +360,14 @@ class FstabMainWindow(QMainWindow):
         form_layout.addWidget(params_group)
 
         # Checkboxes for Common Mount Options
-        opts_group = QGroupBox("Common Mount Options (Click any to toggle in real time)")
+        opts_group = QGroupBox(tr("group_common_options"))
         opts_grid = QGridLayout(opts_group)
-        opts_grid.setSpacing(10)
+        opts_grid.setSpacing(8)
 
         self.option_checkboxes: dict[str, QCheckBox] = {}
         for idx, (opt, desc, impact, example) in enumerate(self.COMMON_OPTIONS):
             chk = QCheckBox(opt)
-            chk.setToolTip(format_tooltip(f"Mount Option: {opt}", opt, desc, impact, example))
+            chk.setToolTip(format_tooltip(tr("tooltip_mount_option_prefix", opt=opt), opt, desc, impact, example))
             chk.toggled.connect(self._on_entry_modified)
             self.option_checkboxes[opt] = chk
             row = idx // 5
@@ -371,27 +377,28 @@ class FstabMainWindow(QMainWindow):
         form_layout.addWidget(opts_group)
 
         # Advanced / Systemd Options Group (Search Catalog)
-        adv_group = QGroupBox("Advanced Mount Options (e.g. Automount, Network Dependencies, Timeouts)")
+        adv_group = QGroupBox(tr("group_adv_options"))
         adv_layout = QVBoxLayout(adv_group)
+        adv_layout.setSpacing(6)
 
         adv_bar = QHBoxLayout()
-        self.lbl_adv_count = QLabel("Active Advanced / Custom Options:")
-        self.lbl_adv_count.setStyleSheet("color: #89b4fa; font-weight: bold;")
+        self.lbl_adv_count = QLabel(tr("lbl_adv_count"))
+        self.lbl_adv_count.setStyleSheet("color: #6899e6; font-weight: bold; font-size: 11px;")
         adv_bar.addWidget(self.lbl_adv_count)
         adv_bar.addStretch()
 
-        btn_search_opts = QPushButton("Add Advanced Option")
-        btn_search_opts.setToolTip("Search a catalog of mount options including systemd automount, network targets, idle timeouts, and Btrfs subvolumes.")
+        btn_search_opts = QPushButton(tr("btn_add_advanced"))
+        btn_search_opts.setToolTip(tr("tooltip_add_advanced"))
         btn_search_opts.clicked.connect(self._open_advanced_options_dialog)
         adv_bar.addWidget(btn_search_opts)
         adv_layout.addLayout(adv_bar)
 
         self.tbl_adv = QTableWidget(0, 2)
-        self.tbl_adv.setHorizontalHeaderLabels(["Option Directive", "Action"])
+        self.tbl_adv.setHorizontalHeaderLabels([tr("col_adv_directive"), tr("col_adv_action")])
         self.tbl_adv.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.tbl_adv.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-        self.tbl_adv.setColumnWidth(1, 100)
-        self.tbl_adv.setFixedHeight(110)
+        self.tbl_adv.setColumnWidth(1, 90)
+        self.tbl_adv.setFixedHeight(100)
         adv_layout.addWidget(self.tbl_adv)
 
         form_layout.addWidget(adv_group)
@@ -402,24 +409,25 @@ class FstabMainWindow(QMainWindow):
 
         # Bottom Action Bar
         action_layout = QHBoxLayout()
-        self.btn_new = QPushButton("➕ Add New Entry")
+        action_layout.setSpacing(8)
+        self.btn_new = QPushButton(tr("btn_add_entry"))
         self.btn_new.clicked.connect(self._add_new_entry)
         action_layout.addWidget(self.btn_new)
 
-        self.btn_delete = QPushButton("🗑️ Remove Selected")
+        self.btn_delete = QPushButton(tr("btn_remove_selected"))
         self.btn_delete.clicked.connect(self._remove_selected_entry)
         action_layout.addWidget(self.btn_delete)
 
-        self.btn_test = QPushButton("🧪 Dry Run (mount -fa)")
-        self.btn_test.setToolTip("Runs 'mount -fa' (fake mount) to validate the fstab syntax without actually mounting filesystems.")
+        self.btn_test = QPushButton(tr("btn_dry_run"))
+        self.btn_test.setToolTip(tr("tooltip_dry_run"))
         self.btn_test.clicked.connect(self._test_dry_run)
         action_layout.addWidget(self.btn_test)
 
         action_layout.addStretch()
 
-        self.btn_apply = QPushButton("💾 Apply && Save to /etc/fstab")
+        self.btn_apply = QPushButton(tr("btn_apply"))
         self.btn_apply.setObjectName("primaryBtn")
-        self.btn_apply.setToolTip("Inspects diff, creates automatic backup, and writes changes with elevated privileges.")
+        self.btn_apply.setToolTip(tr("tooltip_apply"))
         self.btn_apply.clicked.connect(self._apply_changes)
         action_layout.addWidget(self.btn_apply)
 
@@ -491,7 +499,8 @@ class FstabMainWindow(QMainWindow):
         for idx, opt in enumerate(extra_opts):
             self.tbl_adv.insertRow(idx)
             self.tbl_adv.setItem(idx, 0, QTableWidgetItem(opt))
-            btn_del = QPushButton("❌ Remove")
+            btn_del = QPushButton(tr("btn_remove_adv"))
+            btn_del.setStyleSheet("font-size: 11px; padding: 2px 6px;")
             btn_del.clicked.connect(lambda _, o=opt: self._remove_advanced_option(o))
             self.tbl_adv.setCellWidget(idx, 1, btn_del)
 
@@ -509,7 +518,7 @@ class FstabMainWindow(QMainWindow):
     def _open_advanced_options_dialog(self) -> None:
         selected = self.table.selectedItems()
         if not selected:
-            QMessageBox.warning(self, "No Entry Selected", "Please select an entry in the fstab table first.")
+            QMessageBox.warning(self, tr("title_no_entry_selected"), tr("msg_select_entry_first"))
             return
         row = selected[0].row()
         entry: FstabEntry = self.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
@@ -580,8 +589,8 @@ class FstabMainWindow(QMainWindow):
         entry = self.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
         confirm = QMessageBox.question(
             self,
-            "Confirm Removal",
-            f"Are you sure you want to remove the mount entry for:\n\n{entry.mount_point} ({entry.fs_spec})?",
+            tr("title_confirm_removal"),
+            tr("msg_confirm_removal", mount_point=entry.mount_point, fs_spec=entry.fs_spec),
         )
         if confirm == QMessageBox.StandardButton.Yes:
             self.entries.remove(entry)
@@ -591,16 +600,16 @@ class FstabMainWindow(QMainWindow):
         modified_raw = FstabParser.serialize_entries(self.entries)
         diff = generate_diff(self.original_raw, modified_raw, "fstab")
         if not diff.strip():
-            QMessageBox.information(self, "No Changes", "No changes detected compared to the current file.")
+            QMessageBox.information(self, tr("title_no_changes"), tr("msg_no_changes"))
             return
 
         notes = [
-            "Automatic backup will be created before saving.",
-            "Review that the root (/) and /boot entries are intact.",
+            tr("note_backup_created"),
+            tr("note_review_root_boot"),
         ]
 
         dlg = SafetyExecutionDialog(
-            title="Inspect /etc/fstab Diff",
+            title=tr("dialog_diff_title"),
             target_path_or_command=self.fstab_path,
             diff_text=diff,
             safety_notes=notes,
@@ -611,23 +620,23 @@ class FstabMainWindow(QMainWindow):
     def _test_dry_run(self) -> None:
         res = SafeExecutor.run_command(["mount", "-fa"])
         if res.success:
-            QMessageBox.information(self, "Dry-Run Check Passed", "Command 'mount -fa' reported no syntax or mounting errors.")
+            QMessageBox.information(self, tr("title_dry_run_passed"), tr("msg_dry_run_passed"))
         else:
-            QMessageBox.warning(self, "Dry-Run Warning", f"mount -fa reported:\n{res.stderr or res.stdout}")
+            QMessageBox.warning(self, tr("title_dry_run_warning"), tr("msg_dry_run_warning", output=res.stderr or res.stdout))
 
     def _apply_changes(self) -> None:
         modified_raw = FstabParser.serialize_entries(self.entries)
         diff = generate_diff(self.original_raw, modified_raw, "fstab")
 
         notes = [
-            "Timestamped backup will be created in /etc/fstab.bak.<timestamp>",
-            "Uses elevated privileges via pkexec.",
+            tr("note_timestamped_backup"),
+            tr("note_elevated_privileges"),
         ]
 
         dlg = SafetyExecutionDialog(
-            title="Apply /etc/fstab Modifications",
+            title=tr("dialog_apply_title"),
             target_path_or_command=self.fstab_path,
-            diff_text=diff if diff.strip() else "# No differences detected",
+            diff_text=diff if diff.strip() else tr("diff_no_diff"),
             safety_notes=notes,
             parent=self,
         )
@@ -636,9 +645,9 @@ class FstabMainWindow(QMainWindow):
             if res.success:
                 QMessageBox.information(
                     self,
-                    "Success",
-                    f"/etc/fstab updated successfully!\nBackup: {res.backup_file}",
+                    tr("title_success"),
+                    tr("msg_apply_success", backup=res.backup_file),
                 )
                 self.reload_fstab()
             else:
-                QMessageBox.critical(self, "Error Applying Changes", f"Failed:\n{res.stderr}")
+                QMessageBox.critical(self, tr("title_error_applying"), tr("msg_apply_error", error=res.stderr))

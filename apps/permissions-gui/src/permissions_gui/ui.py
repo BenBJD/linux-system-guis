@@ -29,6 +29,7 @@ from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog
 from linux_gui_core.widgets.tooltips import format_tooltip
 from permissions_gui.backend import ACLEntry, PermissionsBackend
+from permissions_gui.strings import tr
 
 
 class PermissionsMainWindow(QMainWindow):
@@ -36,8 +37,8 @@ class PermissionsMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Advanced File Permissions (ACLs & Attributes)")
-        self.resize(1180, 820)
+        self.setWindowTitle(tr("window_title"))
+        self.resize(1280, 720)
         self.setMinimumSize(960, 680)
 
         self.current_path: str = os.path.expanduser("~")
@@ -51,37 +52,38 @@ class PermissionsMainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
 
         # 1. Top Live Preview Banner
         self.preview_banner = LivePreviewBanner(
-            title="EXACT PERMISSION COMMAND PREVIEW",
-            subtitle="Modifying ACL entries or attributes below dynamically constructs the exact setfacl or chattr command.",
+            title=tr("preview_title"),
+            subtitle=tr("preview_subtitle"),
         )
         layout.addWidget(self.preview_banner)
 
         # 2. Target File/Folder Selection Bar
         path_bar = QHBoxLayout()
-        path_bar.addWidget(QLabel("Target Path:"))
+        path_bar.setSpacing(8)
+        path_bar.addWidget(QLabel(tr("lbl_target_path")))
         self.txt_path = QLineEdit(self.current_path)
         self.txt_path.returnPressed.connect(self._on_path_entered)
         path_bar.addWidget(self.txt_path)
 
-        btn_browse_file = QPushButton("📄 Select File...")
+        btn_browse_file = QPushButton(tr("btn_select_file"))
         btn_browse_file.clicked.connect(self._browse_file)
         path_bar.addWidget(btn_browse_file)
 
-        btn_browse_dir = QPushButton("📁 Select Folder...")
+        btn_browse_dir = QPushButton(tr("btn_select_dir"))
         btn_browse_dir.clicked.connect(self._browse_dir)
         path_bar.addWidget(btn_browse_dir)
 
         layout.addLayout(path_bar)
 
         # Basic Stats Pill
-        self.lbl_stats = QLabel("Checking permissions...")
+        self.lbl_stats = QLabel(tr("lbl_stats_checking"))
         self.lbl_stats.setStyleSheet(
-            "background-color: #181825; border: 1px solid #313244; border-radius: 6px; padding: 6px 10px; color: #89b4fa; font-family: monospace;"
+            "background-color: #18191c; border: 1px solid #3a3d45; border-radius: 3px; padding: 4px 8px; color: #6899e6; font-family: monospace; font-size: 11px;"
         )
         layout.addWidget(self.lbl_stats)
 
@@ -91,18 +93,18 @@ class PermissionsMainWindow(QMainWindow):
         # Tab 1: Access Control Lists (ACLs)
         tab_acl = QWidget()
         acl_layout = QVBoxLayout(tab_acl)
-        acl_layout.setContentsMargins(8, 8, 8, 8)
-        acl_layout.setSpacing(10)
+        acl_layout.setContentsMargins(6, 6, 6, 6)
+        acl_layout.setSpacing(8)
 
         acl_splitter = QSplitter(Qt.Orientation.Vertical)
 
         # Current ACL table
         self.tbl_acls = QTableWidget(0, 4)
         self.tbl_acls.setHorizontalHeaderLabels([
-            "Principal Type",
-            "Target Name",
-            "Permissions (rwx)",
-            "Default Inheritance?",
+            tr("col_principal_type"),
+            tr("col_target_name"),
+            tr("col_permissions"),
+            tr("col_default_inherited"),
         ])
         self.tbl_acls.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.tbl_acls.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
@@ -120,48 +122,48 @@ class PermissionsMainWindow(QMainWindow):
 
         acl_form_container = QWidget()
         form_layout = QVBoxLayout(acl_form_container)
-        form_layout.setContentsMargins(4, 6, 4, 6)
-        form_layout.setSpacing(10)
+        form_layout.setContentsMargins(2, 4, 2, 4)
+        form_layout.setSpacing(6)
 
-        grant_box = QGroupBox("Grant or Modify Extended Access Control Entry (setfacl -m)")
+        grant_box = QGroupBox(tr("group_grant_acl"))
         grant_grid = QGridLayout(grant_box)
-        grant_grid.setSpacing(8)
+        grant_grid.setSpacing(6)
 
         # Principal type (user vs group)
-        self.rb_user = QRadioButton("User (u:)")
+        self.rb_user = QRadioButton(tr("rb_user"))
         self.rb_user.setChecked(True)
-        self.rb_group = QRadioButton("Group (g:)")
+        self.rb_group = QRadioButton(tr("rb_group"))
         self.rb_user.toggled.connect(self._update_acl_preview)
         self.rb_group.toggled.connect(self._update_acl_preview)
         grant_grid.addWidget(self.rb_user, 0, 0)
         grant_grid.addWidget(self.rb_group, 0, 1)
 
-        grant_grid.addWidget(QLabel("User or Group Name:"), 0, 2)
+        grant_grid.addWidget(QLabel(tr("lbl_principal_name")), 0, 2)
         self.txt_principal = QLineEdit("alice")
-        self.txt_principal.setPlaceholderText("e.g. alice, developers, docker")
+        self.txt_principal.setPlaceholderText(tr("placeholder_principal"))
         self.txt_principal.setToolTip(format_tooltip(
-            "ACL Recipient",
-            "u:username or g:groupname",
-            "The specific user account or group granted permissions beyond the base owner.",
-            "Required",
+            tr("tooltip_principal_title"),
+            tr("tooltip_principal_syntax"),
+            tr("tooltip_principal_desc"),
+            tr("tooltip_principal_impact"),
         ))
         self.txt_principal.textChanged.connect(self._update_acl_preview)
         grant_grid.addWidget(self.txt_principal, 0, 3)
 
         # Permission checkboxes
         perm_bar = QHBoxLayout()
-        perm_bar.addWidget(QLabel("Permissions:"))
-        self.chk_read = QCheckBox("Read (r)")
+        perm_bar.addWidget(QLabel(tr("lbl_perms")))
+        self.chk_read = QCheckBox(tr("chk_read"))
         self.chk_read.setChecked(True)
         self.chk_read.toggled.connect(self._update_acl_preview)
         perm_bar.addWidget(self.chk_read)
 
-        self.chk_write = QCheckBox("Write (w)")
+        self.chk_write = QCheckBox(tr("chk_write"))
         self.chk_write.setChecked(True)
         self.chk_write.toggled.connect(self._update_acl_preview)
         perm_bar.addWidget(self.chk_write)
 
-        self.chk_exec = QCheckBox("Execute (x)")
+        self.chk_exec = QCheckBox(tr("chk_exec"))
         self.chk_exec.toggled.connect(self._update_acl_preview)
         perm_bar.addWidget(self.chk_exec)
         perm_bar.addStretch()
@@ -169,18 +171,22 @@ class PermissionsMainWindow(QMainWindow):
 
         # Flags: default (-d) and recursive (-R)
         flags_bar = QHBoxLayout()
-        self.chk_default = QCheckBox("Default ACL (-d) - Newly created files inherit this")
+        self.chk_default = QCheckBox(tr("chk_default"))
         self.chk_default.setToolTip(format_tooltip(
-            "Inherited Default ACL",
-            "setfacl -d -m ...",
-            "Only applicable to directories. Files and subfolders created inside will automatically inherit this access entry.",
-            "Recommended for shared folders",
+            tr("tooltip_default_title"),
+            tr("tooltip_default_syntax"),
+            tr("tooltip_default_desc"),
+            tr("tooltip_default_impact"),
         ))
         self.chk_default.toggled.connect(self._update_acl_preview)
         flags_bar.addWidget(self.chk_default)
 
-        self.chk_recursive = QCheckBox("Recursive (-R)")
-        self.chk_recursive.setToolTip(format_tooltip("Recursive Application", "-R", "Applies permissions recursively to all subdirectories."))
+        self.chk_recursive = QCheckBox(tr("chk_recursive"))
+        self.chk_recursive.setToolTip(format_tooltip(
+            tr("tooltip_recursive_title"),
+            tr("tooltip_recursive_syntax"),
+            tr("tooltip_recursive_desc"),
+        ))
         self.chk_recursive.toggled.connect(self._update_acl_preview)
         flags_bar.addWidget(self.chk_recursive)
         flags_bar.addStretch()
@@ -193,81 +199,91 @@ class PermissionsMainWindow(QMainWindow):
 
         # Action Buttons
         acl_action_bar = QHBoxLayout()
-        btn_apply_acl = QPushButton("➕ Grant / Apply ACL Entry")
+        acl_action_bar.setSpacing(8)
+        btn_apply_acl = QPushButton(tr("btn_apply_acl"))
         btn_apply_acl.setObjectName("primaryBtn")
         btn_apply_acl.clicked.connect(self._apply_acl_entry)
         acl_action_bar.addWidget(btn_apply_acl)
 
-        btn_rm_acl = QPushButton("🗑️ Remove Selected ACL (-x)")
-        btn_rm_acl.setToolTip("Deletes the selected extended ACL entry using 'setfacl -x'.")
+        btn_rm_acl = QPushButton(tr("btn_remove_acl"))
+        btn_rm_acl.setToolTip(tr("tooltip_remove_acl"))
         btn_rm_acl.clicked.connect(self._remove_selected_acl)
         acl_action_bar.addWidget(btn_rm_acl)
 
         acl_action_bar.addStretch()
 
-        btn_strip_all = QPushButton("🧹 Strip All Extended ACLs (-b)")
-        btn_strip_all.setToolTip("Removes all extended ACL entries, restoring standard POSIX permissions.")
+        btn_strip_all = QPushButton(tr("btn_strip_all_acls"))
+        btn_strip_all.setToolTip(tr("tooltip_strip_all_acls"))
         btn_strip_all.clicked.connect(self._strip_all_acls)
         acl_action_bar.addWidget(btn_strip_all)
 
         acl_layout.addLayout(acl_action_bar)
-        tabs.addTab(tab_acl, "👥 Access Control Lists (getfacl / setfacl)")
+        tabs.addTab(tab_acl, tr("tab_acls"))
 
         # Tab 2: Linux Extended File Attributes (chattr / lsattr)
         tab_attr = QWidget()
         attr_layout = QVBoxLayout(tab_attr)
-        attr_layout.setContentsMargins(16, 16, 16, 16)
-        attr_layout.setSpacing(14)
+        attr_layout.setContentsMargins(10, 10, 10, 10)
+        attr_layout.setSpacing(8)
 
-        status_attr_box = QGroupBox("Current Linux File Attributes (lsattr)")
+        status_attr_box = QGroupBox(tr("group_lsattr"))
         status_attr_layout = QVBoxLayout(status_attr_box)
-        self.lbl_attr_raw = QLabel("lsattr output: (loading)")
-        self.lbl_attr_raw.setStyleSheet("font-size: 15px; font-weight: bold; color: #89b4fa; font-family: monospace; padding: 6px;")
+        status_attr_layout.setSpacing(6)
+        self.lbl_attr_raw = QLabel(tr("lbl_lsattr_loading"))
+        self.lbl_attr_raw.setStyleSheet("font-size: 14px; font-weight: bold; color: #6899e6; font-family: monospace; padding: 4px;")
         status_attr_layout.addWidget(self.lbl_attr_raw)
 
-        lbl_attr_expl = QLabel(
-            "Extended attributes are low-level filesystem flags enforced directly by the Linux kernel "
-            "(ext4, btrfs, xfs). They can make files completely immutable—preventing accidental deletion "
-            "even by the root user!"
-        )
+        lbl_attr_expl = QLabel(tr("lbl_attr_expl"))
         lbl_attr_expl.setWordWrap(True)
-        lbl_attr_expl.setStyleSheet("color: #a6adc8; font-size: 12px;")
+        lbl_attr_expl.setStyleSheet("color: #9498a1; font-size: 11px;")
         status_attr_layout.addWidget(lbl_attr_expl)
         attr_layout.addWidget(status_attr_box)
 
         # Attributes Checkbox Form
-        flags_group = QGroupBox("Configure Kernel Attributes (Click any to toggle)")
+        flags_group = QGroupBox(tr("group_configure_attrs"))
         flags_grid = QGridLayout(flags_group)
-        flags_grid.setSpacing(12)
+        flags_grid.setSpacing(8)
 
-        self.chk_attr_i = QCheckBox("Immutable (+i) - Cannot be modified, deleted, renamed, or linked, even by root!")
+        self.chk_attr_i = QCheckBox(tr("chk_attr_i"))
         self.chk_attr_i.setToolTip(format_tooltip(
-            "Immutable Flag",
-            "sudo chattr +i <file>",
-            "Locks the file completely against all modifications, renames, and deletions. Even root cannot delete an immutable file without removing the +i flag first.",
-            "Ultimate Protection against deletion",
+            tr("tooltip_attr_i_title"),
+            tr("tooltip_attr_i_syntax"),
+            tr("tooltip_attr_i_desc"),
+            tr("tooltip_attr_i_impact"),
         ))
         flags_grid.addWidget(self.chk_attr_i, 0, 0)
 
-        self.chk_attr_a = QCheckBox("Append-Only (+a) - Can only be opened in append mode (Ideal for audit logs)")
+        self.chk_attr_a = QCheckBox(tr("chk_attr_a"))
         self.chk_attr_a.setToolTip(format_tooltip(
-            "Append-Only Flag",
-            "sudo chattr +a <file>",
-            "Processes can only append data to the end of the file; existing content cannot be overwritten or deleted.",
-            "Recommended for Security Logs",
+            tr("tooltip_attr_a_title"),
+            tr("tooltip_attr_a_syntax"),
+            tr("tooltip_attr_a_desc"),
+            tr("tooltip_attr_a_impact"),
         ))
         flags_grid.addWidget(self.chk_attr_a, 1, 0)
 
-        self.chk_attr_d = QCheckBox("No-Dump (+d) - Excluded from backup archives created by dump utility")
-        self.chk_attr_d.setToolTip(format_tooltip("No-Dump Flag", "chattr +d", "Prevents file from being backed up by dump utility."))
+        self.chk_attr_d = QCheckBox(tr("chk_attr_d"))
+        self.chk_attr_d.setToolTip(format_tooltip(
+            tr("tooltip_attr_d_title"),
+            tr("tooltip_attr_d_syntax"),
+            tr("tooltip_attr_d_desc"),
+        ))
         flags_grid.addWidget(self.chk_attr_d, 2, 0)
 
-        self.chk_attr_c = QCheckBox("Compressed (+c) - Transparent filesystem compression on disk")
-        self.chk_attr_c.setToolTip(format_tooltip("Compressed Flag", "chattr +c", "Requests kernel transparent compression on supported filesystems."))
+        self.chk_attr_c = QCheckBox(tr("chk_attr_c"))
+        self.chk_attr_c.setToolTip(format_tooltip(
+            tr("tooltip_attr_c_title"),
+            tr("tooltip_attr_c_syntax"),
+            tr("tooltip_attr_c_desc"),
+        ))
         flags_grid.addWidget(self.chk_attr_c, 3, 0)
 
-        self.chk_attr_s = QCheckBox("Secure Deletion (+s) - Zeroes out disk blocks upon file deletion")
-        self.chk_attr_s.setToolTip(format_tooltip("Secure Deletion Flag", "chattr +s", "Forces kernel to zero out blocks when unlinking."))
+        self.chk_attr_s = QCheckBox(tr("chk_attr_s"))
+        self.chk_attr_s.setToolTip(format_tooltip(
+            tr("tooltip_attr_s_title"),
+            tr("tooltip_attr_s_syntax"),
+            tr("tooltip_attr_s_desc"),
+        ))
         flags_grid.addWidget(self.chk_attr_s, 4, 0)
 
         for chk in (self.chk_attr_i, self.chk_attr_a, self.chk_attr_d, self.chk_attr_c, self.chk_attr_s):
@@ -277,25 +293,25 @@ class PermissionsMainWindow(QMainWindow):
 
         attr_btn_bar = QHBoxLayout()
         attr_btn_bar.addStretch()
-        btn_apply_attr = QPushButton("💾 Apply Kernel Attributes (sudo chattr)")
+        btn_apply_attr = QPushButton(tr("btn_apply_attrs"))
         btn_apply_attr.setObjectName("primaryBtn")
         btn_apply_attr.clicked.connect(self._apply_attributes)
         attr_btn_bar.addWidget(btn_apply_attr)
         attr_layout.addLayout(attr_btn_bar)
 
         attr_layout.addStretch()
-        tabs.addTab(tab_attr, "🔒 File Attributes (chattr / lsattr)")
+        tabs.addTab(tab_attr, tr("tab_attrs"))
 
         layout.addWidget(tabs)
 
     def _browse_file(self) -> None:
-        p, _ = QFileDialog.getOpenFileName(self, "Select Target File", self.current_path)
+        p, _ = QFileDialog.getOpenFileName(self, tr("dialog_select_file_title"), self.current_path)
         if p:
             self.txt_path.setText(p)
             self._on_path_entered()
 
     def _browse_dir(self) -> None:
-        p = QFileDialog.getExistingDirectory(self, "Select Target Folder", self.current_path)
+        p = QFileDialog.getExistingDirectory(self, tr("dialog_select_dir_title"), self.current_path)
         if p:
             self.txt_path.setText(p)
             self._on_path_entered()
@@ -306,17 +322,22 @@ class PermissionsMainWindow(QMainWindow):
             self.current_path = p
             self._inspect_path()
         else:
-            QMessageBox.warning(self, "Not Found", f"Path does not exist:\n{p}")
+            QMessageBox.warning(self, tr("title_not_found"), tr("msg_path_not_found", path=p))
 
     def _inspect_path(self) -> None:
         p = self.current_path
         stat = PermissionsBackend.get_basic_stat(p)
         if stat:
-            t_str = "📁 Directory" if stat["is_dir"] else "📄 File"
+            t_str = tr("type_dir") if stat["is_dir"] else tr("type_file")
             self.lbl_stats.setText(
-                f"Target: <b>{p}</b> &nbsp;|&nbsp; Type: {t_str} &nbsp;|&nbsp; "
-                f"Mode: <b>0{stat['mode']}</b> &nbsp;|&nbsp; "
-                f"Owner: <b>{stat['owner']}</b> &nbsp;|&nbsp; Group: <b>{stat['group']}</b>"
+                tr(
+                    "lbl_stats_format",
+                    path=p,
+                    type_str=t_str,
+                    mode=stat["mode"],
+                    owner=stat["owner"],
+                    group=stat["group"],
+                )
             )
             self.chk_default.setEnabled(stat["is_dir"])
             if not stat["is_dir"]:
@@ -328,7 +349,7 @@ class PermissionsMainWindow(QMainWindow):
 
         # Inspect Attributes
         attr_str = PermissionsBackend.get_file_attributes(p)
-        self.lbl_attr_raw.setText(f"lsattr: {attr_str or '----'}")
+        self.lbl_attr_raw.setText(tr("lbl_lsattr_format", attr=attr_str or "----"))
 
         self._is_updating_ui = True
         self.chk_attr_i.setChecked("i" in attr_str)
@@ -347,7 +368,7 @@ class PermissionsMainWindow(QMainWindow):
             self.tbl_acls.setItem(row, 0, QTableWidgetItem(entry.principal_type))
             self.tbl_acls.setItem(row, 1, QTableWidgetItem(entry.principal_name))
             self.tbl_acls.setItem(row, 2, QTableWidgetItem(entry.permissions))
-            def_str = "Yes (Default Inherited)" if entry.is_default else "Direct"
+            def_str = tr("val_default_inherited") if entry.is_default else tr("val_direct")
             self.tbl_acls.setItem(row, 3, QTableWidgetItem(def_str))
             self.tbl_acls.item(row, 0).setData(Qt.ItemDataRole.UserRole, entry)
 
@@ -383,7 +404,7 @@ class PermissionsMainWindow(QMainWindow):
     def _apply_acl_entry(self) -> None:
         name = self.txt_principal.text().strip()
         if not name:
-            QMessageBox.warning(self, "Missing Name", "Please specify a target user or group name.")
+            QMessageBox.warning(self, tr("title_missing_name"), tr("msg_missing_name"))
             return
 
         p_type = "u" if self.rb_user.isChecked() else "g"
@@ -397,54 +418,54 @@ class PermissionsMainWindow(QMainWindow):
         cmd_str = " ".join(cmd_list)
 
         dlg = SafetyExecutionDialog(
-            title="Apply Access Control List (ACL)",
+            title=tr("dialog_apply_acl_title"),
             target_path_or_command=cmd_str,
             safety_notes=[
-                f"Grants extended permissions '{perms}' to {p_type}:{name}",
-                "Uses elevated privileges via pkexec.",
+                tr("note_apply_acl", perms=perms, p_type=p_type, name=name),
+                tr("note_elevated_pkexec"),
             ],
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = PermissionsBackend.apply_setfacl(self.current_path, p_type, name, perms, is_def, rec)
             if res.success:
-                QMessageBox.information(self, "ACL Applied", f"Permission successfully granted!\n\n{cmd_str}")
+                QMessageBox.information(self, tr("title_acl_applied"), tr("msg_acl_applied", command=cmd_str))
                 self._inspect_path()
             else:
-                QMessageBox.critical(self, "Error", f"Failed:\n{res.stderr or res.stdout}")
+                QMessageBox.critical(self, tr("title_error"), tr("msg_acl_error", error=res.stderr or res.stdout))
 
     def _remove_selected_acl(self) -> None:
         selected = self.tbl_acls.selectedItems()
         if not selected:
-            QMessageBox.warning(self, "No Selection", "Please select an ACL entry from the table first.")
+            QMessageBox.warning(self, tr("title_no_selection"), tr("msg_select_acl_first"))
             return
         row = selected[0].row()
         entry: ACLEntry = self.tbl_acls.item(row, 0).data(Qt.ItemDataRole.UserRole)
 
         confirm = QMessageBox.question(
             self,
-            "Remove ACL Entry",
-            f"Remove ACL entry for {entry.principal_type}:{entry.principal_name}?",
+            tr("title_remove_acl"),
+            tr("msg_confirm_remove_acl", p_type=entry.principal_type, name=entry.principal_name),
         )
         if confirm == QMessageBox.StandardButton.Yes:
             res = PermissionsBackend.remove_acl_entry(self.current_path, entry)
             if res.success:
                 self._inspect_path()
             else:
-                QMessageBox.critical(self, "Failed", f"Error:\n{res.stderr}")
+                QMessageBox.critical(self, tr("title_failed"), tr("msg_failed", error=res.stderr))
 
     def _strip_all_acls(self) -> None:
         confirm = QMessageBox.question(
             self,
-            "Strip All ACLs",
-            f"Remove ALL extended ACL entries from {self.current_path}?",
+            tr("title_strip_all_acls"),
+            tr("msg_confirm_strip_all", path=self.current_path),
         )
         if confirm == QMessageBox.StandardButton.Yes:
             res = PermissionsBackend.remove_all_acls(self.current_path)
             if res.success:
                 self._inspect_path()
             else:
-                QMessageBox.critical(self, "Failed", f"Error:\n{res.stderr}")
+                QMessageBox.critical(self, tr("title_failed"), tr("msg_failed", error=res.stderr))
 
     def _apply_attributes(self) -> None:
         # Build flag string
@@ -474,25 +495,25 @@ class PermissionsMainWindow(QMainWindow):
             parts.append(f"-{''.join(minus)}")
 
         if not parts:
-            QMessageBox.information(self, "No Changes", "Attributes match current state; no changes to apply.")
+            QMessageBox.information(self, tr("title_no_changes"), tr("msg_no_attr_changes"))
             return
 
         cmd_flag = " ".join(parts)
         cmd_str = f"sudo chattr {cmd_flag} {self.current_path}"
 
         dlg = SafetyExecutionDialog(
-            title="Apply File Attributes",
+            title=tr("dialog_apply_attr_title"),
             target_path_or_command=cmd_str,
             safety_notes=[
-                "Modifies low-level kernel filesystem flags.",
-                "Setting '+i' will prevent modifications even by root.",
+                tr("note_mod_kernel_flags"),
+                tr("note_immutable_root"),
             ],
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = PermissionsBackend.apply_chattr(self.current_path, cmd_flag)
             if res.success:
-                QMessageBox.information(self, "Attributes Applied", f"Updated attributes successfully!\n{cmd_str}")
+                QMessageBox.information(self, tr("title_attrs_applied"), tr("msg_attrs_applied", command=cmd_str))
                 self._inspect_path()
             else:
-                QMessageBox.critical(self, "Failed", f"Error:\n{res.stderr or res.stdout}")
+                QMessageBox.critical(self, tr("title_failed"), tr("msg_failed", error=res.stderr or res.stdout))

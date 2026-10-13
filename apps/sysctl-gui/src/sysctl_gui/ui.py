@@ -26,6 +26,7 @@ from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog
 from linux_gui_core.widgets.tooltips import format_tooltip
 from sysctl_gui.backend import SYSCTL_PRESETS, SysctlBackend, SysctlPreset
+from sysctl_gui.strings import tr
 
 
 class SysctlMainWindow(QMainWindow):
@@ -35,8 +36,8 @@ class SysctlMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Kernel Parameters & Tweaks (sysctl)")
-        self.resize(1180, 820)
+        self.setWindowTitle(tr("window_title"))
+        self.resize(1280, 720)
         self.setMinimumSize(960, 680)
 
         self.selected_preset: SysctlPreset = SYSCTL_PRESETS[0]
@@ -51,13 +52,13 @@ class SysctlMainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
 
         # 1. Top Live Preview Banner
         self.preview_banner = LivePreviewBanner(
-            title="Sysctl Command Preview",
-            subtitle="Shows the shell command or sysctl.d configuration line before modification.",
+            title=tr("preview_title"),
+            subtitle=tr("preview_subtitle"),
         )
         layout.addWidget(self.preview_banner)
 
@@ -67,19 +68,19 @@ class SysctlMainWindow(QMainWindow):
         # Tab 1: Curated Tweaks
         tab_presets = QWidget()
         preset_layout = QVBoxLayout(tab_presets)
-        preset_layout.setContentsMargins(8, 8, 8, 8)
-        preset_layout.setSpacing(10)
+        preset_layout.setContentsMargins(6, 6, 6, 6)
+        preset_layout.setSpacing(8)
 
         preset_splitter = QSplitter(Qt.Orientation.Vertical)
 
         # Presets table
         self.tbl_presets = QTableWidget(0, 5)
         self.tbl_presets.setHorizontalHeaderLabels([
-            "Category",
-            "Parameter Key",
-            "Live Kernel Value",
-            "Recommended Value",
-            "Safety Rating",
+            tr("col_category"),
+            tr("col_param_key"),
+            tr("col_live_val"),
+            tr("col_rec_val"),
+            tr("col_safety_rating"),
         ])
         self.tbl_presets.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.tbl_presets.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
@@ -99,60 +100,61 @@ class SysctlMainWindow(QMainWindow):
 
         detail_container = QWidget()
         detail_layout = QVBoxLayout(detail_container)
-        detail_layout.setContentsMargins(4, 6, 4, 6)
-        detail_layout.setSpacing(10)
+        detail_layout.setContentsMargins(2, 4, 2, 4)
+        detail_layout.setSpacing(6)
 
-        info_box = QGroupBox("Selected Kernel Parameter Explanation & Range")
+        info_box = QGroupBox(tr("group_param_info"))
         info_grid = QGridLayout(info_box)
-        info_grid.setSpacing(8)
+        info_grid.setSpacing(6)
 
         self.lbl_param_title = QLabel("Swappiness Aggressiveness")
-        self.lbl_param_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #89b4fa;")
+        self.lbl_param_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #6899e6;")
         info_grid.addWidget(self.lbl_param_title, 0, 0, 1, 2)
 
         self.lbl_param_key = QLabel("Key: <code>vm.swappiness</code>")
         info_grid.addWidget(self.lbl_param_key, 1, 0)
 
         self.lbl_param_range = QLabel("Range: 0 to 200")
-        self.lbl_param_range.setStyleSheet("color: #a6adc8;")
+        self.lbl_param_range.setStyleSheet("color: #9498a1;")
         info_grid.addWidget(self.lbl_param_range, 1, 1)
 
         self.lbl_param_desc = QLabel("Explanation of parameter...")
         self.lbl_param_desc.setWordWrap(True)
-        self.lbl_param_desc.setStyleSheet("color: #cdd6f4; line-height: 1.4; padding: 4px 0;")
+        self.lbl_param_desc.setStyleSheet("color: #e3e5e8; line-height: 1.4; padding: 2px 0;")
         info_grid.addWidget(self.lbl_param_desc, 2, 0, 1, 2)
 
         # Value input & Apply bar
         input_bar = QHBoxLayout()
-        input_bar.addWidget(QLabel("New Target Value:"))
+        input_bar.setSpacing(8)
+        input_bar.addWidget(QLabel(tr("lbl_target_value")))
         self.txt_new_val = QLineEdit("10")
         self.txt_new_val.setMaximumWidth(160)
         self.txt_new_val.textChanged.connect(self._update_preview)
         input_bar.addWidget(self.txt_new_val)
 
-        btn_fill_rec = QPushButton("Use Recommended")
+        btn_fill_rec = QPushButton(tr("btn_use_recommended"))
         btn_fill_rec.clicked.connect(self._fill_recommended)
         input_bar.addWidget(btn_fill_rec)
 
         input_bar.addStretch()
 
-        btn_live = QPushButton("Apply Live (sysctl -w)")
+        btn_live = QPushButton(tr("btn_apply_live"))
         btn_live.setToolTip(format_tooltip(
-            "Live Memory Change",
-            "sudo sysctl -w <key>=<val>",
-            "Modifies kernel parameter in memory immediately without requiring a reboot. Note: Resets back to default on next reboot unless saved persistently.",
-            "Safe Temporary Test",
+            tr("tooltip_apply_live_title"),
+            tr("tooltip_apply_live_cmd"),
+            tr("tooltip_apply_live_desc"),
+            tr("tooltip_apply_live_safety"),
         ))
         btn_live.clicked.connect(self._apply_live)
         input_bar.addWidget(btn_live)
 
-        btn_persist = QPushButton("Save Persistent (/etc/sysctl.d/)")
+        btn_persist = QPushButton(tr("btn_save_persistent"))
         btn_persist.setObjectName("primaryBtn")
         btn_persist.setToolTip(format_tooltip(
-            "Persistent Configuration",
-            "write to /etc/sysctl.d/99-custom.conf && sysctl --system",
-            "Writes the setting permanently so it persists across reboots, and immediately reloads the system kernel configuration.",
-            "Permanent Setting",
+            tr("tooltip_save_persist_title"),
+            tr("tooltip_save_persist_cmd"),
+            tr("tooltip_save_persist_desc"),
+            tr("tooltip_save_persist_safety"),
         ))
         btn_persist.clicked.connect(self._apply_persistent)
         input_bar.addWidget(btn_persist)
@@ -163,28 +165,29 @@ class SysctlMainWindow(QMainWindow):
         scroll.setWidget(detail_container)
         preset_splitter.addWidget(scroll)
         preset_layout.addWidget(preset_splitter)
-        tabs.addTab(tab_presets, "Curated System Tweaks")
+        tabs.addTab(tab_presets, tr("tab_presets"))
 
         # Tab 2: All Parameters
         tab_all = QWidget()
         all_layout = QVBoxLayout(tab_all)
-        all_layout.setContentsMargins(8, 8, 8, 8)
-        all_layout.setSpacing(10)
+        all_layout.setContentsMargins(6, 6, 6, 6)
+        all_layout.setSpacing(8)
 
         search_bar = QHBoxLayout()
-        search_bar.addWidget(QLabel("Search Parameter:"))
+        search_bar.setSpacing(8)
+        search_bar.addWidget(QLabel(tr("lbl_search_param")))
         self.txt_search_all = QLineEdit()
-        self.txt_search_all.setPlaceholderText("Filter any sysctl key (e.g. tcp, inotify, core, bbr)...")
+        self.txt_search_all.setPlaceholderText(tr("placeholder_search_param"))
         self.txt_search_all.textChanged.connect(self._filter_all_params)
         search_bar.addWidget(self.txt_search_all)
 
-        btn_load_all = QPushButton("Query All (sysctl -a)")
+        btn_load_all = QPushButton(tr("btn_query_all"))
         btn_load_all.clicked.connect(self._load_all_parameters)
         search_bar.addWidget(btn_load_all)
         all_layout.addLayout(search_bar)
 
         self.tbl_all = QTableWidget(0, 2)
-        self.tbl_all.setHorizontalHeaderLabels(["Kernel Parameter Name", "Current Live Value"])
+        self.tbl_all.setHorizontalHeaderLabels([tr("col_all_name"), tr("col_all_val")])
         self.tbl_all.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         self.tbl_all.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.tbl_all.setColumnWidth(0, 360)
@@ -192,7 +195,7 @@ class SysctlMainWindow(QMainWindow):
         self.tbl_all.itemSelectionChanged.connect(self._on_all_table_selected)
         all_layout.addWidget(self.tbl_all)
 
-        tabs.addTab(tab_all, "Full Parameter Explorer (sysctl -a)")
+        tabs.addTab(tab_all, tr("tab_all"))
 
         layout.addWidget(tabs)
 
@@ -224,8 +227,8 @@ class SysctlMainWindow(QMainWindow):
         self.selected_preset = preset
 
         self.lbl_param_title.setText(preset.title)
-        self.lbl_param_key.setText(f"Key: <code>{preset.key}</code> (Category: {preset.category})")
-        self.lbl_param_range.setText(f"Range & Defaults: {preset.typical_range}")
+        self.lbl_param_key.setText(tr("lbl_param_key_format", key=preset.key, category=preset.category))
+        self.lbl_param_range.setText(tr("lbl_param_range_format", range=preset.typical_range))
         self.lbl_param_desc.setText(preset.description)
         self.txt_new_val.setText(preset.recommended_value)
 
@@ -249,22 +252,22 @@ class SysctlMainWindow(QMainWindow):
         cmd = f"sudo sysctl -w {key}={val}"
 
         dlg = SafetyExecutionDialog(
-            title="Apply Live Kernel Parameter",
+            title=tr("dialog_live_title"),
             target_path_or_command=cmd,
             safety_notes=[
-                "Modifies active kernel memory immediately.",
-                "Temporary: will reset back to default on next reboot.",
-                "Safe for testing performance and responsiveness.",
+                tr("note_live_memory"),
+                tr("note_live_temporary"),
+                tr("note_live_safe"),
             ],
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = SysctlBackend.apply_live_value(key, val)
             if res.success:
-                QMessageBox.information(self, "Live Setting Applied", f"Kernel parameter updated in memory!\n\n{cmd}")
+                QMessageBox.information(self, tr("title_live_applied"), tr("msg_live_applied", cmd=cmd))
                 self._load_presets()
             else:
-                QMessageBox.critical(self, "Failed", f"Error applying setting:\n{res.stderr or res.stdout}")
+                QMessageBox.critical(self, tr("title_failed"), tr("msg_live_failed", error=res.stderr or res.stdout))
 
     def _apply_persistent(self) -> None:
         key = self.selected_preset.key
@@ -272,22 +275,22 @@ class SysctlMainWindow(QMainWindow):
         cmd = f"echo '{key} = {val}' >> {self.TARGET_CONF} && sudo sysctl --system"
 
         dlg = SafetyExecutionDialog(
-            title="Save Persistent Kernel Parameter",
+            title=tr("dialog_persist_title"),
             target_path_or_command=cmd,
             safety_notes=[
-                f"Appends/updates '{key} = {val}' in {self.TARGET_CONF}",
-                "Runs 'sysctl --system' to reload all system configuration files.",
-                "Persists across reboots.",
+                tr("note_persist_write", key=key, val=val, conf=self.TARGET_CONF),
+                tr("note_persist_reload"),
+                tr("note_persist_reboot"),
             ],
             parent=self,
         )
         if dlg.exec() == SafetyExecutionDialog.DialogCode.Accepted:
             res = SysctlBackend.save_persistent_config(key, val, self.TARGET_CONF)
             if res.success:
-                QMessageBox.information(self, "Saved Permanently", f"Setting saved to {self.TARGET_CONF} and loaded into kernel!")
+                QMessageBox.information(self, tr("title_saved_permanent"), tr("msg_saved_permanent", conf=self.TARGET_CONF))
                 self._load_presets()
             else:
-                QMessageBox.critical(self, "Failed", f"Error saving setting:\n{res.stderr or res.stdout}")
+                QMessageBox.critical(self, tr("title_failed"), tr("msg_persist_failed", error=res.stderr or res.stdout))
 
     def _load_all_parameters(self) -> None:
         self.all_params = SysctlBackend.list_all_parameters()

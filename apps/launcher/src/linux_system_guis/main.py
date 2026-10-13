@@ -5,7 +5,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -17,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from linux_gui_core.theme import apply_theme
+from linux_system_guis.strings import tr
 from fstab_gui.ui import FstabMainWindow
 from udev_gui.ui import UdevMainWindow
 from systemd_gui.ui import SystemdMainWindow
@@ -26,63 +26,80 @@ from journal_gui.ui import JournalMainWindow
 from sysctl_gui.ui import SysctlMainWindow
 from permissions_gui.ui import PermissionsMainWindow
 from bootloader_gui.ui import BootloaderMainWindow
+from device_gui.ui import DeviceMainWindow
 
 
 class LauncherCard(QFrame):
-    """A visual card representing an individual administration tool."""
+    """A compact list row representing an individual administration tool."""
 
     def __init__(self, title: str, icon: str, category: str, desc: str, on_launch, parent=None):
         super().__init__(parent)
+        self._on_launch = on_launch
         self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setStyleSheet(
             """
             QFrame {
-                background-color: #181825;
-                border: 1px solid #313244;
-                border-radius: 12px;
-                padding: 10px;
+                background-color: #222428;
+                border: 1px solid #2d3036;
+                border-radius: 4px;
             }
             QFrame:hover {
-                border-color: #89b4fa;
-                background-color: #1e1e2e;
+                border-color: #3574d4;
+                background-color: #26292f;
             }
             """
         )
 
-        layout = QVBoxLayout(self)
-        layout.setSpacing(8)
+        row_layout = QHBoxLayout(self)
+        row_layout.setContentsMargins(10, 6, 10, 6)
+        row_layout.setSpacing(12)
 
-        header = QHBoxLayout()
+        # 0: Icon
         icon_lbl = QLabel(icon)
-        icon_lbl.setStyleSheet("font-size: 26px;")
-        header.addWidget(icon_lbl)
+        icon_lbl.setStyleSheet("font-size: 20px;")
+        icon_lbl.setFixedWidth(28)
+        icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        row_layout.addWidget(icon_lbl)
 
-        title_col = QVBoxLayout()
-        title_col.setSpacing(2)
+        # Title & Category Box (fixed width to align descriptions neatly)
+        title_box = QVBoxLayout()
+        title_box.setSpacing(1)
 
+        # 1: Category
         cat_lbl = QLabel(category.upper())
-        cat_lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #89b4fa;")
-        title_col.addWidget(cat_lbl)
+        cat_lbl.setStyleSheet("font-size: 9px; font-weight: bold; color: #729fe6; letter-spacing: 0.5px;")
+        title_box.addWidget(cat_lbl)
 
+        # 2: Title
         title_lbl = QLabel(title)
-        title_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #cdd6f4;")
-        title_col.addWidget(title_lbl)
+        title_lbl.setStyleSheet("font-size: 13px; font-weight: 600; color: #e3e5e8;")
+        title_box.addWidget(title_lbl)
 
-        header.addLayout(title_col)
-        header.addStretch()
-        layout.addLayout(header)
+        title_container = QWidget()
+        title_container.setLayout(title_box)
+        title_container.setFixedWidth(220)
+        row_layout.addWidget(title_container)
 
+        # 3: Description
         desc_lbl = QLabel(desc)
         desc_lbl.setWordWrap(True)
-        desc_lbl.setStyleSheet("color: #a6adc8; font-size: 14px; line-height: 1.4;")
-        layout.addWidget(desc_lbl)
+        desc_lbl.setStyleSheet("color: #9498a1; font-size: 11px; line-height: 1.3;")
+        row_layout.addWidget(desc_lbl, stretch=1)
 
-        layout.addStretch()
-
-        btn_launch = QPushButton("🚀 Open Application")
+        # Open Button
+        btn_launch = QPushButton(tr("btn_open"))
         btn_launch.setObjectName("primaryBtn")
-        btn_launch.clicked.connect(on_launch)
-        layout.addWidget(btn_launch)
+        btn_launch.setFixedHeight(24)
+        btn_launch.setFixedWidth(64)
+        btn_launch.setStyleSheet("font-size: 11px; padding: 2px 6px;")
+        btn_launch.clicked.connect(self._on_launch)
+        row_layout.addWidget(btn_launch)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._on_launch()
+        super().mousePressEvent(event)
 
 
 class LauncherMainWindow(QMainWindow):
@@ -90,9 +107,9 @@ class LauncherMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Linux System GUIs")
-        self.resize(1280, 800)
-        self.setMinimumSize(960, 680)
+        self.setWindowTitle(tr("window_title"))
+        self.resize(1280, 720)
+        self.setMinimumSize(800, 500)
         self.windows: list[QMainWindow] = []
         self.cards: list[LauncherCard] = []
 
@@ -102,126 +119,93 @@ class LauncherMainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(10)
+        layout.setContentsMargins(14, 12, 14, 12)
+        layout.setSpacing(8)
 
-        # Header Title
+        # Header Title Bar
         title_bar = QHBoxLayout()
-        title = QLabel("Linux System GUIs")
-        title.setStyleSheet("font-size: 26px; font-weight: bold; color: #cdd6f4;")
-        title_bar.addWidget(title)
+        title_bar.setSpacing(10)
 
-        title_bar.addStretch()
+        title_col = QVBoxLayout()
+        title_col.setSpacing(2)
+
+        title = QLabel(tr("header_title"))
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #e3e5e8;")
+        title_col.addWidget(title)
+
+        subtitle = QLabel(
+            "Safe, transparent desktop tools for low-level system configuration. "
+            "Real-time command previews, dry-run checks, and detailed tooltips."
+        )
+        subtitle.setStyleSheet("color: #9498a1; font-size: 11px;")
+        title_col.addWidget(subtitle)
+
+        title_bar.addLayout(title_col, stretch=1)
 
         self.txt_filter = QLineEdit()
-        self.txt_filter.setPlaceholderText("Filter tools (e.g. logs, sudo, fstab, boot, kernel)...")
-        self.txt_filter.setMaximumWidth(320)
+        self.txt_filter.setPlaceholderText(tr("filter_placeholder"))
+        self.txt_filter.setMaximumWidth(280)
+        self.txt_filter.setClearButtonEnabled(True)
         self.txt_filter.textChanged.connect(self._filter_cards)
         title_bar.addWidget(self.txt_filter)
 
         layout.addLayout(title_bar)
 
-        subtitle = QLabel(
-            "Safe, transparent, and educational desktop tools for low-level system configuration. "
-            "Every tool displays real-time command/file line previews, dry-run checks, and detailed tooltips."
-        )
-        subtitle.setWordWrap(True)
-        subtitle.setStyleSheet("color: #a6adc8; font-size: 13px; line-height: 1.4;")
-        layout.addWidget(subtitle)
-
-        # Scrollable Grid of 9 App Cards
+        # Scrollable List of App Rows
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
 
         container = QWidget()
-        self.grid = QGridLayout(container)
-        self.grid.setSpacing(10)
+        self.list_layout = QVBoxLayout(container)
+        self.list_layout.setContentsMargins(2, 4, 6, 4)
+        self.list_layout.setSpacing(4)
 
-        # Card definitions
+        # Tool definitions: (string-key prefix, icon, launch callback)
+        tools = [
+            ("tool_device", "🖥️", self.launch_device),
+            ("tool_fstab", "💾", self.launch_fstab),
+            ("tool_udev", "🔌", self.launch_udev),
+            ("tool_systemd", "⚙️", self.launch_systemd),
+            ("tool_usermgmt", "👥", self.launch_usermgmt),
+            ("tool_sudoers", "🛡️", self.launch_sudoers),
+            ("tool_journal", "📜", self.launch_journal),
+            ("tool_sysctl", "🧠", self.launch_sysctl),
+            ("tool_permissions", "🔓", self.launch_permissions),
+            ("tool_bootloader", "🚀", self.launch_bootloader),
+        ]
         card_data = [
-            (
-                "fstab Editor",
-                "💾",
-                "Disks & Mounts",
-                "Manage /etc/fstab mount points, UUIDs, filesystem options (noatime, nosuid, nofail), systemd automounts, and test with mount -fa dry runs.",
-                self.launch_fstab,
-            ),
-            (
-                "udev Rules Builder",
-                "🔌",
-                "Hardware & Devices",
-                "Create and modify device rules in /etc/udev/rules.d/ with matching vendor IDs, permission modes (0666), sleep wakeup toggles, uaccess tags, and daemon reloads.",
-                self.launch_udev,
-            ),
-            (
-                "systemd Services & Timers",
-                "⚙️",
-                "Init & Daemons",
-                "Explore, start, stop, enable system & user services with friendly status tags (Running, Stopped, Starts on Boot). Build scheduled timers with OnCalendar expressions.",
-                self.launch_systemd,
-            ),
-            (
-                "Users & Groups Security",
-                "👥",
-                "Access Control",
-                "Manage user accounts, login shells (/bin/bash vs /usr/bin/nologin), and full system group memberships (vboxusers, ollama, sudo, docker) with real-time usermod command preview.",
-                self.launch_usermgmt,
-            ),
-            (
-                "Sudoers Privilege Manager",
-                "🛡️",
-                "Privilege Delegation",
-                "Configure sudoers rules in /etc/sudoers.d/ for users and groups (%wheel). Pick passwordless commands (NOPASSWD) with automated visudo -c syntax validation.",
-                self.launch_sudoers,
-            ),
-            (
-                "System Journal & Logs",
-                "📜",
-                "Diagnostics & Maintenance",
-                "Explore system and service logs with journalctl. Filter by boot sessions (-b), units (-u), log levels (-p), and vacuum old logs by time or disk size.",
-                self.launch_journal,
-            ),
-            (
-                "Kernel Parameters (sysctl)",
-                "🧠",
-                "Kernel Tuning",
-                "Tune kernel settings (vm.swappiness, BBR TCP, inotify watches, IPv6) with plain-English value explanations, temporary live changes (sysctl -w), and /etc/sysctl.d/ persistence.",
-                self.launch_sysctl,
-            ),
-            (
-                "Advanced Permissions (ACLs & Attr)",
-                "🔐",
-                "Filesystem Security",
-                "Manage POSIX Access Control Lists (setfacl / getfacl) for users and groups, and enforce kernel extended attributes like immutable (+i) via chattr and lsattr.",
-                self.launch_permissions,
-            ),
-            (
-                "Bootloader & Kernel Args",
-                "🚀",
-                "Boot Sequence",
-                "Configure kernel boot parameters (quiet, nomodeset, nowatchdog) and timeouts for GRUB (/etc/default/grub) and systemd-boot with safe configuration regeneration.",
-                self.launch_bootloader,
-            ),
+            (tr(f"{key}_title"), icon, tr(f"{key}_category"), tr(f"{key}_desc"), callback)
+            for key, icon, callback in tools
         ]
 
-        for idx, (t, icon, cat, desc, callback) in enumerate(card_data):
+        for t, icon, cat, desc, callback in card_data:
             card = LauncherCard(t, icon, cat, desc, callback)
             self.cards.append(card)
-            row = idx // 3
-            col = idx % 3
-            self.grid.addWidget(card, row, col)
+            self.list_layout.addWidget(card)
 
+        self.list_layout.addStretch()
         scroll.setWidget(container)
         layout.addWidget(scroll)
 
     def _filter_cards(self, text: str) -> None:
-        needle = text.lower()
+        needle = text.lower().strip()
         for card in self.cards:
-            matches = needle in card.findChildren(QLabel)[1].text().lower() or \
-                      needle in card.findChildren(QLabel)[2].text().lower() or \
-                      needle in card.findChildren(QLabel)[3].text().lower()
+            labels = card.findChildren(QLabel)
+            if len(labels) >= 4:
+                matches = (
+                    needle in labels[1].text().lower()
+                    or needle in labels[2].text().lower()
+                    or needle in labels[3].text().lower()
+                )
+            else:
+                matches = True
             card.setVisible(matches)
+
+    def launch_device(self) -> None:
+        win = DeviceMainWindow()
+        win.show()
+        self.windows.append(win)
 
     def launch_fstab(self) -> None:
         win = FstabMainWindow()
