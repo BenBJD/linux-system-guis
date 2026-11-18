@@ -1,5 +1,5 @@
 Name:           linux-system-guis
-Version:        0.1.0
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        Educational, transparent desktop administration suite for Linux
 
@@ -95,5 +95,9 @@ cp packaging/desktop/icons/linux-system-guis.svg %{buildroot}%{_datadir}/icons/h
 %{_datadir}/icons/hicolor/scalable/apps/linux-system-guis.svg
 
 %changelog
+* Wed Nov 18 2026 Ben Davison <benjdavison02@gmail.com> - 0.2.0-1
+- Add loading modal, tabbed man page and Arch Wiki help viewer, and richer tooltips
+- Expand sysctl, systemd, udev, and fstab editors with searchable option catalogs
+
 * Sun Oct 11 2026 Ben Davison <benjdavison02@gmail.com> - 0.1.0-1
 - Initial packaging release for Fedora / RHEL / openSUSE

@@ -17,7 +17,7 @@ if command -v rpmbuild >/dev/null 2>&1; then
     RPMBUILD_DIR="$ROOT_DIR/build/rpmbuild"
     mkdir -p "$RPMBUILD_DIR"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-    VERSION="0.1.0"
+    VERSION="0.2.0"
     TAR_NAME="linux-system-guis-${VERSION}"
 
     # Create archive directly from local tree to include untracked/staged files during development

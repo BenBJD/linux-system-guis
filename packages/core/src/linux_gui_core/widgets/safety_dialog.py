@@ -36,14 +36,14 @@ class SafetyExecutionDialog(QDialog):
         self.setStyleSheet(
             """
             QDialog {
-                background-color: #1e1f22;
-                color: #e3e5e8;
+                background-color: #16181d;
+                color: #f0f3f6;
             }
             """
         )
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setContentsMargins(14, 12, 14, 12)
         layout.setSpacing(8)
 
         # Header warning / info badge
@@ -51,11 +51,12 @@ class SafetyExecutionDialog(QDialog):
         banner.setStyleSheet(
             """
             QLabel {
-                background-color: #26282d;
-                border-left: 3px solid #d49a3d;
-                padding: 6px 8px;
-                border-radius: 3px;
-                color: #e3e5e8;
+                background-color: #1e222b;
+                border: 1px solid #282d38;
+                border-left: 3px solid #d29922;
+                padding: 8px 10px;
+                border-radius: 5px;
+                color: #f0f3f6;
             }
             """
         )
@@ -65,13 +66,13 @@ class SafetyExecutionDialog(QDialog):
         if safety_notes:
             notes_html = f"<b>{tr('safety_protections_heading')}</b><ul>" + "".join(f"<li>{n}</li>" for n in safety_notes) + "</ul>"
             notes_lbl = QLabel(notes_html)
-            notes_lbl.setStyleSheet("color: #9498a1; font-size: 11px;")
+            notes_lbl.setStyleSheet("color: #9198a1; font-size: 12px; line-height: 1.4;")
             notes_lbl.setWordWrap(True)
             layout.addWidget(notes_lbl)
 
         # Diff or Command viewer
         lbl_preview = QLabel(tr("safety_preview_label"))
-        lbl_preview.setStyleSheet("font-weight: bold; color: #6899e6; font-size: 12px;")
+        lbl_preview.setStyleSheet("font-weight: 600; color: #85abf2; font-size: 12.5px;")
         layout.addWidget(lbl_preview)
 
         self.text_preview = QTextEdit()
@@ -79,11 +80,11 @@ class SafetyExecutionDialog(QDialog):
         self.text_preview.setStyleSheet(
             """
             QTextEdit {
-                background-color: #18191c;
-                border: 1px solid #2d3036;
-                border-radius: 3px;
-                padding: 6px;
-                color: #e3e5e8;
+                background-color: #111317;
+                border: 1px solid #282d38;
+                border-radius: 5px;
+                padding: 8px;
+                color: #f0f3f6;
             }
             """
         )
@@ -125,13 +126,13 @@ class SafetyExecutionDialog(QDialog):
         for line in diff_text.splitlines():
             escaped = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             if line.startswith("+"):
-                html_lines.append(f"<span style='color: #3ba55d; background-color: #162c1e;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #3fb950; background-color: #162c1e;'>{escaped}</span>")
             elif line.startswith("-"):
-                html_lines.append(f"<span style='color: #d83a52; background-color: #33151b;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #f85149; background-color: #33151b;'>{escaped}</span>")
             elif line.startswith("@"):
-                html_lines.append(f"<span style='color: #6899e6; font-weight: bold;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #79c0ff; font-weight: bold;'>{escaped}</span>")
             else:
-                html_lines.append(f"<span style='color: #e3e5e8;'>{escaped}</span>")
+                html_lines.append(f"<span style='color: #f0f3f6;'>{escaped}</span>")
 
         self.text_preview.setHtml("<br>".join(html_lines))
 

@@ -1,6 +1,6 @@
 [project]
 name = "permissions-gui"
-version = "0.1.0"
+version = "0.2.0"
 description = "Interactive Advanced Linux File Permissions manager (ACLs via setfacl/getfacl and Attributes via chattr/lsattr)"
 requires-python = ">=3.12"
 dependencies = [

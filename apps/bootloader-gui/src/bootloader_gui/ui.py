@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
 
 from linux_gui_core.runner.executor import SafeExecutor
 from linux_gui_core.runner.package_manager import PackageManagerInspector, PackageOwnership
+from linux_gui_core.widgets.loading_modal import run_with_loading_modal
 from linux_gui_core.widgets.package_badge import PackageOwnershipBadge
 from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog, generate_diff
@@ -58,6 +59,7 @@ class BootloaderMainWindow(QMainWindow):
         self.preview_banner = LivePreviewBanner(
             title=tr("preview_title"),
             subtitle=tr("preview_subtitle"),
+            man_pages=["kernel-command-line(7)", "bootctl(1)", "loader.conf(5)", "grub-mkconfig(8)"],
         )
         self.preview_banner.diffRequested.connect(self._inspect_diff)
         layout.addWidget(self.preview_banner)
@@ -137,6 +139,7 @@ class BootloaderMainWindow(QMainWindow):
             tr("tooltip_timeout_syntax"),
             tr("tooltip_timeout_desc"),
             tr("tooltip_timeout_impact"),
+            man_page="loader.conf(5)",
         ))
         self.spn_timeout.valueChanged.connect(self._on_values_changed)
         menu_grid.addWidget(self.spn_timeout, 0, 1)
@@ -147,7 +150,10 @@ class BootloaderMainWindow(QMainWindow):
             tr("tooltip_default_title"),
             tr("tooltip_default_syntax"),
             tr("tooltip_default_desc"),
-            tr("tooltip_default_impact"),
+            can_be_blank=False,
+            blank_behavior="Should specify an entry index ('0' for GRUB) or entry pattern ('@saved' for systemd-boot).",
+            default_value="0 (GRUB) / @saved (systemd-boot)",
+            man_page="loader.conf(5)",
         ))
         self.txt_default.textChanged.connect(self._on_values_changed)
         menu_grid.addWidget(self.txt_default, 0, 3)
@@ -162,7 +168,7 @@ class BootloaderMainWindow(QMainWindow):
         self.arg_checkboxes: dict[str, QCheckBox] = {}
         for idx, (arg_key, desc, impact, example) in enumerate(COMMON_KERNEL_ARGS):
             chk = QCheckBox(arg_key)
-            chk.setToolTip(format_tooltip(tr("tooltip_kernel_arg_prefix", arg=arg_key), arg_key, desc, impact, example))
+            chk.setToolTip(format_tooltip(tr("tooltip_kernel_arg_prefix", arg=arg_key), arg_key, desc, impact, example, man_page="kernel-command-line(7)"))
             chk.toggled.connect(self._on_values_changed)
             self.arg_checkboxes[arg_key] = chk
             row = idx // 4
@@ -182,6 +188,9 @@ class BootloaderMainWindow(QMainWindow):
             tr("tooltip_extra_args_title"),
             tr("tooltip_extra_args_syntax"),
             tr("tooltip_extra_args_desc"),
+            can_be_blank=True,
+            blank_behavior="Only the checked common kernel arguments above (and existing root/UUID parameters) are used.",
+            man_page="kernel-command-line(7)",
         ))
         self.txt_custom_args.textChanged.connect(self._on_values_changed)
         c_layout.addWidget(self.txt_custom_args)
@@ -233,7 +242,12 @@ class BootloaderMainWindow(QMainWindow):
             )
 
         # Package badge
-        self.package_ownership = PackageManagerInspector.check_file_owner(self.config.config_file_path)
+        self.package_ownership = run_with_loading_modal(
+            self,
+            title="Loading Bootloader Configuration...",
+            subtitle="Inspecting bootloader files and package ownership...",
+            task_fn=lambda: PackageManagerInspector.check_file_owner(self.config.config_file_path),
+        )
         self.package_badge.update_status(self.package_ownership, self.config.config_file_path)
 
         self.spn_timeout.setValue(self.config.timeout)

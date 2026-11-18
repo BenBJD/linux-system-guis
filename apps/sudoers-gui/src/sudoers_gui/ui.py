@@ -82,6 +82,7 @@ class SudoersMainWindow(QMainWindow):
         self.preview_banner = LivePreviewBanner(
             title=tr("preview_title"),
             subtitle=tr("preview_subtitle"),
+            man_pages=["sudoers(5)", "visudo(8)", "sudo(8)"],
         )
         self.preview_banner.diffRequested.connect(self._inspect_diff)
         layout.addWidget(self.preview_banner)
@@ -103,6 +104,7 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_unlock_read_cmd"),
             tr("tooltip_unlock_read_desc"),
             tr("tooltip_unlock_read_safety"),
+            man_page="sudoers(5)",
         ))
         self.btn_unlock_read.setVisible(False)
         self.btn_unlock_read.clicked.connect(self._read_all_with_root)
@@ -132,6 +134,7 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_validate_syntax_cmd"),
             tr("tooltip_validate_syntax_desc"),
             tr("tooltip_validate_syntax_safety"),
+            man_page="visudo(8)",
         ))
         btn_validate_syntax.clicked.connect(self._validate_current_syntax)
         file_bar.addWidget(btn_validate_syntax)
@@ -199,8 +202,10 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_entity_title"),
             tr("tooltip_entity_syntax"),
             tr("tooltip_entity_desc"),
-            tr("tooltip_entity_impact"),
-            tr("tooltip_entity_example"),
+            can_be_blank=False,
+            blank_behavior="A username or group name must be specified for the sudoers rule.",
+            example=tr("tooltip_entity_example"),
+            man_page="sudoers(5)",
         ))
         self.txt_entity.textChanged.connect(self._on_rule_modified)
         subject_grid.addWidget(self.txt_entity, 0, 3)
@@ -218,7 +223,10 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_hosts_title"),
             tr("tooltip_hosts_syntax"),
             tr("tooltip_hosts_desc"),
-            tr("tooltip_hosts_impact"),
+            can_be_blank=True,
+            blank_behavior="Automatically defaults to 'ALL' (applies on any hostname) if left blank.",
+            default_value="ALL",
+            man_page="sudoers(5)",
         ))
         self.txt_hosts.textChanged.connect(self._on_rule_modified)
         scope_grid.addWidget(self.txt_hosts, 0, 1)
@@ -229,7 +237,10 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_runas_user_title"),
             tr("tooltip_runas_user_syntax"),
             tr("tooltip_runas_user_desc"),
-            tr("tooltip_runas_user_impact"),
+            can_be_blank=True,
+            blank_behavior="Automatically defaults to 'ALL' if left blank.",
+            default_value="ALL",
+            man_page="sudoers(5)",
         ))
         self.txt_runas_user.textChanged.connect(self._on_rule_modified)
         scope_grid.addWidget(self.txt_runas_user, 0, 3)
@@ -240,6 +251,10 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_runas_group_title"),
             tr("tooltip_runas_group_syntax"),
             tr("tooltip_runas_group_desc"),
+            can_be_blank=True,
+            blank_behavior="Omits the ':group' portion of the Runas_Spec (commands run as the target user's primary group).",
+            default_value="ALL",
+            man_page="sudoers(5)",
         ))
         self.txt_runas_group.textChanged.connect(self._on_rule_modified)
         scope_grid.addWidget(self.txt_runas_group, 1, 3)
@@ -256,8 +271,10 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_nopasswd_title"),
             tr("tooltip_nopasswd_syntax"),
             tr("tooltip_nopasswd_desc"),
-            tr("tooltip_nopasswd_impact"),
-            tr("tooltip_nopasswd_example"),
+            default_value="PASSWD (prompts for user password)",
+            security=tr("tooltip_nopasswd_impact"),
+            example=tr("tooltip_nopasswd_example"),
+            man_page="sudoers(5)",
         ))
         self.chk_nopasswd.toggled.connect(self._on_rule_modified)
         auth_grid.addWidget(self.chk_nopasswd, 0, 0, 1, 2)
@@ -269,7 +286,10 @@ class SudoersMainWindow(QMainWindow):
             tr("tooltip_commands_title"),
             tr("tooltip_commands_syntax"),
             tr("tooltip_commands_desc"),
-            tr("tooltip_commands_impact"),
+            can_be_blank=False,
+            blank_behavior="Defaults to 'ALL' if cleared; a sudoers rule must specify allowed commands or 'ALL'.",
+            recommended_value=tr("tooltip_commands_impact"),
+            man_page="sudoers(5)",
         ))
         self.txt_commands.textChanged.connect(self._on_rule_modified)
         auth_grid.addWidget(self.txt_commands, 1, 1, 1, 3)

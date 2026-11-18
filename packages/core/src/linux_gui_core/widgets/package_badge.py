@@ -5,28 +5,32 @@ from linux_gui_core.runner.package_manager import PackageOwnership
 from linux_gui_core.strings import tr
 
 _MANAGED_STYLE = """
-    QFrame {
-        background-color: #33271a;
-        border: 1px solid #735429;
-        border-radius: 3px;
+    QFrame#packageOwnershipBadge {
+        background-color: #262016;
+        border: 1px solid #5a401c;
+        border-radius: 4px;
     }
     QLabel {
-        color: #d49a3d;
-        font-size: 11px;
+        color: #e3b341;
+        font-size: 11.5px;
         font-weight: 600;
+        border: none;
+        background: transparent;
     }
 """
 
 _UNMANAGED_STYLE = """
-    QFrame {
-        background-color: #172d1f;
-        border: 1px solid #2b5e3d;
-        border-radius: 3px;
+    QFrame#packageOwnershipBadge {
+        background-color: #142318;
+        border: 1px solid #234d31;
+        border-radius: 4px;
     }
     QLabel {
-        color: #57ab5a;
-        font-size: 11px;
+        color: #3fb950;
+        font-size: 11.5px;
         font-weight: 600;
+        border: none;
+        background: transparent;
     }
 """
 
@@ -36,6 +40,7 @@ class PackageOwnershipBadge(QFrame):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
+        self.setObjectName("packageOwnershipBadge")
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(6, 2, 6, 2)

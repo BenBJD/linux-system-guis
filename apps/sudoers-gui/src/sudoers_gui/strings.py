@@ -20,26 +20,26 @@ EN: dict[str, str] = {
 
     # Top file bar
     "lbl_sudoers_file": "Sudoers File:",
-    "btn_unlock_read": "🔓 Read as Root",
+    "btn_unlock_read": "Read as Root",
     "tooltip_unlock_read_title": "Batch Read as Root",
     "tooltip_unlock_read_cmd": "pkexec python3",
     "tooltip_unlock_read_desc": "Prompts for root privileges once to load /etc/sudoers, scan all /etc/sudoers.d/ drop-in files, and read their contents.",
     "tooltip_unlock_read_safety": "Safe / Required for inspecting existing rules",
-    "btn_refresh_all": "🔄 Refresh (Root)",
+    "btn_refresh_all": "Refresh (Root)",
     "tooltip_refresh_all": "Re-scan /etc/sudoers and all /etc/sudoers.d/ files to refresh contents.",
-    "btn_new_file": "📄 New Drop-in File",
-    "tooltip_new_file": "Create a new rule file in /etc/sudoers.d/. Note: sudoers ignores files containing periods (.) or ending in ~.",
-    "btn_delete_file": "🗑️ Delete Drop-in",
+    "btn_new_file": "New Drop-in File",
+    "tooltip_new_file": "Create a new rule file in /etc/sudoers.d/. Note: per sudoers(5), sudo strictly ignores files containing periods (.) or ending in ~.",
+    "btn_delete_file": "Delete Drop-in",
     "tooltip_delete_file": "Permanently remove the currently selected drop-in file from /etc/sudoers.d/.",
-    "btn_validate_syntax": "🧪 Validate with visudo",
+    "btn_validate_syntax": "Validate with visudo",
     "tooltip_validate_syntax_title": "Syntax Validation",
     "tooltip_validate_syntax_cmd": "visudo -c -f <file>",
-    "tooltip_validate_syntax_desc": "Performs strict syntax and parsing validation using the system visudo compiler before applying any changes.",
+    "tooltip_validate_syntax_desc": "Performs strict syntax and parse tree validation using the system visudo compiler before applying any changes.",
     "tooltip_validate_syntax_safety": "Strongly Recommended",
 
     # Tabs
     "tab_visual_builder": "Visual Rule Builder",
-    "tab_raw_editor": "📝 Raw File Editor / Comments",
+    "tab_raw_editor": "Raw File Editor / Comments",
     "lbl_raw_help": "<b>Full File View / Editor:</b> Displays all rules, comments, and Defaults directives. You can edit the text directly here. All changes are validated with <code>visudo -c -f</code> prior to saving.",
 
     # Table columns
@@ -87,7 +87,7 @@ EN: dict[str, str] = {
     "chk_nopasswd": "NOPASSWD (Allow executing without asking for user's password)",
     "tooltip_nopasswd_title": "Passwordless Execution Tag",
     "tooltip_nopasswd_syntax": "NOPASSWD: ...",
-    "tooltip_nopasswd_desc": "Bypasses the sudo password prompt when this rule is invoked.<br><br><b>Security Warning:</b> Use with extreme caution. If this account is compromised, the attacker can execute root commands without needing the user password.",
+    "tooltip_nopasswd_desc": "Bypasses the sudo password verification prompt. Per Arch Wiki (Sudo), passwordless root access significantly broadens the blast radius of user account compromises or malicious scripts.<br><br><b>Security Warning:</b> Use with extreme caution. Best restricted to specific non-interactive commands rather than ALL.",
     "tooltip_nopasswd_impact": "Critical Security Impact",
     "tooltip_nopasswd_example": "NOPASSWD: /usr/bin/systemctl restart nginx",
 
@@ -95,16 +95,16 @@ EN: dict[str, str] = {
     "placeholder_commands": "e.g. ALL or /usr/bin/systemctl restart nginx, /usr/bin/pacman -Syu",
     "tooltip_commands_title": "Permitted Commands",
     "tooltip_commands_syntax": "ALL or /path/to/binary",
-    "tooltip_commands_desc": "Absolute paths to permitted commands, separated by commas. Use 'ALL' for unrestricted root commands.",
+    "tooltip_commands_desc": "Absolute canonical paths to permitted commands, separated by commas. Use 'ALL' for unrestricted administrative commands. Per Arch Wiki (Sudo), commands should always specify absolute paths and avoid loose wildcards (*) which can enable argument injection (GTFOBins).",
     "tooltip_commands_impact": "Restricted paths recommended for specific tasks",
 
     "lbl_presets": "Insert Preset:",
     "btn_apply_preset": "Insert Command",
 
     # Bottom action bar
-    "btn_add_rule": "➕ Add New Rule",
-    "btn_remove_rule": "🗑️ Remove Selected Rule",
-    "btn_save_file": "💾 Validate && Save File",
+    "btn_add_rule": "Add New Rule",
+    "btn_remove_rule": "Remove Selected Rule",
+    "btn_save_file": "Validate && Save File",
     "tooltip_save_file": "Validates syntax using visudo compiler, creates an automatic backup, and atomically writes with chmod 0440.",
 
     # Dialogs & safety notices

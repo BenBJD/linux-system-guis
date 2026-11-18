@@ -26,11 +26,12 @@ class BootloaderConfig:
 
 
 COMMON_KERNEL_ARGS = [
-    ("quiet", "Suppress non-critical kernel messages during startup for clean boot screen.", "Safe", "quiet"),
-    ("splash", "Enable graphical boot animation screen.", "Safe", "splash"),
-    ("nomodeset", "Disable kernel mode setting. Troubleshooting parameter for GPU driver crashes or black screens.", "Safe / Troubleshooting", "nomodeset"),
-    ("nowatchdog", "Disable hardware watchdog timer drivers to speed up system boot and shutdown.", "Safe / Performance", "nowatchdog"),
-    ("loglevel=3", "Set console loglevel to error-only (1=emerg, 3=err, 4=warn, 7=debug).", "Safe", "loglevel=3"),
+    ("quiet", "Suppresses kernel log messages with priority below KERN_WARNING (kernel-command-line(7)). Standard parameter for clean, silent boots.", "Standard Boot Parameter", "quiet"),
+    ("splash", "Enables graphical splash boot animation (Plymouth) when supported by initramfs.", "Visual Enhancement", "splash"),
+    ("loglevel=3", "Sets kernel console loglevel to error-only (1=emerg, 3=err, 4=warn, 7=debug). Suppresses non-critical warnings during startup (kernel-command-line(7)).", "Clean Console Output", "loglevel=3"),
+    ("nowatchdog", "Disables hardware watchdog timer drivers (e.g. iTCO_wdt), speeding up system boot and shutdown and reducing power consumption (Arch Wiki Silent boot).", "Performance / Power Saving", "nowatchdog"),
+    ("nomodeset", "Disables kernel mode setting (KMS). Fallback VESA/EFI display is used. Primary troubleshooting parameter for GPU driver crashes or black screens (Arch Wiki Kernel parameters).", "Troubleshooting / Fallback Display", "nomodeset"),
+    ("systemd.show_status=auto", "Hides systemd service startup status text during boot unless a unit fails or times out (Arch Wiki Silent boot).", "Clean Startup", "systemd.show_status=auto"),
 ]
 
 

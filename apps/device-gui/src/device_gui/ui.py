@@ -31,6 +31,7 @@ from PyQt6.QtWidgets import (
 
 from linux_gui_core.runner.executor import SafeExecutor
 from linux_gui_core.runner.package_manager import PackageManagerInspector
+from linux_gui_core.widgets.loading_modal import LoadingModal, run_with_loading_modal
 from linux_gui_core.widgets.package_badge import PackageOwnershipBadge
 from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog
@@ -57,10 +58,17 @@ class DeviceMainWindow(QMainWindow):
         self.devices: list[DeviceInfo] = []
         self.summary: SystemSummary = SystemSummary()
         self.selected_device: DeviceInfo | None = None
+        self._initial_scan_done: bool = False
 
         self._init_ui()
-        # Initial scan deferred by single shot timer to ensure UI renders instantly
-        QTimer.singleShot(50, self.refresh_devices)
+        if LoadingModal._active_instance is not None and LoadingModal._active_instance.isVisible():
+            self.refresh_devices()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self._initial_scan_done and not self.devices:
+            self._initial_scan_done = True
+            QTimer.singleShot(10, self.refresh_devices)
 
     def _init_ui(self) -> None:
         central = QWidget()
@@ -73,6 +81,7 @@ class DeviceMainWindow(QMainWindow):
         self.preview_banner = LivePreviewBanner(
             title=tr("preview_title"),
             subtitle=tr("preview_subtitle"),
+            man_pages=["lspci(8)", "lsusb(8)", "modinfo(8)", "modprobe(8)", "udevadm(8)", "sysfs(5)"],
         )
         root_layout.addWidget(self.preview_banner)
 
@@ -111,6 +120,7 @@ class DeviceMainWindow(QMainWindow):
             tr("tooltip_refresh_cmd"),
             tr("tooltip_refresh_desc"),
             tr("tooltip_refresh_impact"),
+            man_page="udevadm(8)",
         ))
         self.btn_refresh.clicked.connect(self.refresh_devices)
         toolbar.addWidget(self.btn_refresh)
@@ -121,6 +131,7 @@ class DeviceMainWindow(QMainWindow):
             tr("tooltip_report_cmd"),
             tr("tooltip_report_desc"),
             tr("tooltip_report_impact"),
+            man_page="sysfs(5)",
         ))
         btn_report.clicked.connect(self._export_report)
         toolbar.addWidget(btn_report)
@@ -149,7 +160,7 @@ class DeviceMainWindow(QMainWindow):
         tree_layout.setSpacing(4)
 
         self.tree_status_lbl = QLabel(tr("lbl_tree_loading"))
-        self.tree_status_lbl.setStyleSheet("color: #9498a1; font-size: 11px;")
+        self.tree_status_lbl.setStyleSheet("color: #9498a1; font-size: 12px;")
         tree_layout.addWidget(self.tree_status_lbl)
 
         self.tree = QTreeWidget()
@@ -172,14 +183,23 @@ class DeviceMainWindow(QMainWindow):
         self._show_system_summary()
 
     def refresh_devices(self) -> None:
-        """Rescans system hardware and updates the UI."""
+        """Rescans system hardware off the GUI thread and updates the UI."""
+        self._initial_scan_done = True
         self.btn_refresh.setEnabled(False)
         self.tree_status_lbl.setText(tr("lbl_tree_scanning"))
-        QApplication.processEvents()
+
+        def _scan():
+            devs = self.backend.scan_all_devices()
+            summary = self.backend.get_system_summary(devs)
+            return devs, summary
 
         try:
-            self.devices = self.backend.scan_all_devices()
-            self.summary = self.backend.get_system_summary(self.devices)
+            self.devices, self.summary = run_with_loading_modal(
+                self,
+                title="Scanning Hardware...",
+                subtitle="Inspecting PCI, USB, sysfs, and kernel driver modules...",
+                task_fn=_scan,
+            )
             self._rebuild_tree()
             self._show_system_summary()
             self.tree_status_lbl.setText(
@@ -357,12 +377,17 @@ class DeviceMainWindow(QMainWindow):
         self.selected_device = None
 
         header_frame = QFrame()
+        header_frame.setObjectName("deviceHeaderFrame")
         header_frame.setStyleSheet("""
-            QFrame {
+            QFrame#deviceHeaderFrame {
                 background-color: #222428;
                 border: 1px solid #2d3036;
                 border-radius: 4px;
                 padding: 8px;
+            }
+            QLabel {
+                border: none;
+                background: transparent;
             }
         """)
         h_layout = QVBoxLayout(header_frame)
@@ -451,12 +476,17 @@ class DeviceMainWindow(QMainWindow):
 
         # 1. Device Header Card
         header_frame = QFrame()
+        header_frame.setObjectName("deviceHeaderFrame")
         header_frame.setStyleSheet("""
-            QFrame {
+            QFrame#deviceHeaderFrame {
                 background-color: #222428;
                 border: 1px solid #2d3036;
                 border-radius: 4px;
                 padding: 8px;
+            }
+            QLabel {
+                border: none;
+                background: transparent;
             }
         """)
         h_layout = QVBoxLayout(header_frame)
@@ -581,7 +611,8 @@ class DeviceMainWindow(QMainWindow):
 
             ownership = PackageManagerInspector.check_file_owner(dev.device_node)
             if ownership.is_managed:
-                badge = PackageOwnershipBadge(ownership)
+                badge = PackageOwnershipBadge()
+                badge.update_status(ownership, dev.device_node)
                 node_row.addWidget(badge)
             node_row.addStretch()
             hw_layout.addWidget(node_widget, row, 1)
@@ -623,6 +654,7 @@ class DeviceMainWindow(QMainWindow):
                 tr("tooltip_copy_hw_syntax", vendor=dev.vendor_id, product=dev.product_id),
                 tr("tooltip_copy_hw_desc", vendor=dev.vendor_id, product=dev.product_id),
                 "Safe",
+                man_page="lspci(8)" if dev.bus_type == "pci" else "lsusb(8)",
             ))
             btn_copy_hw.clicked.connect(lambda: self._copy_text(f"{dev.vendor_id}:{dev.product_id}", "Hardware ID"))
             btn_bar.addWidget(btn_copy_hw)
@@ -634,6 +666,7 @@ class DeviceMainWindow(QMainWindow):
                 dev.modalias[:40] + "...",
                 tr("tooltip_copy_mod_desc"),
                 "Safe",
+                man_page="modinfo(8)",
             ))
             btn_copy_mod.clicked.connect(lambda: self._copy_text(dev.modalias, "Modalias"))
             btn_bar.addWidget(btn_copy_mod)
@@ -645,6 +678,7 @@ class DeviceMainWindow(QMainWindow):
                 tr("tooltip_open_udev_syntax", bus=dev.bus_type),
                 tr("tooltip_open_udev_desc"),
                 "Safe",
+                man_page="udev(7)",
             ))
             btn_udev.clicked.connect(lambda: self._open_in_udev(dev))
             btn_bar.addWidget(btn_udev)
@@ -656,6 +690,7 @@ class DeviceMainWindow(QMainWindow):
                 tr("tooltip_reload_driver_syntax", name=dev.driver_name),
                 tr("tooltip_reload_driver_desc", name=dev.driver_name),
                 tr("tooltip_reload_driver_impact"),
+                man_page="modprobe(8)",
             ))
             btn_reload.clicked.connect(lambda: self._reload_driver(dev.driver_name))
             btn_bar.addWidget(btn_reload)

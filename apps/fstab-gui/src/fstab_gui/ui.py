@@ -28,6 +28,7 @@ from PyQt6.QtWidgets import (
 )
 
 from linux_gui_core.runner.executor import SafeExecutor
+from linux_gui_core.widgets.loading_modal import populate_option_catalog_list
 from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog, generate_diff
 from linux_gui_core.widgets.tooltips import format_tooltip
@@ -40,96 +41,126 @@ ADVANCED_FSTAB_OPTIONS = [
     (
         "x-systemd.automount",
         "systemd On-Demand Automount",
-        "Creates a systemd automount unit that mounts the drive automatically when accessed by an application or user, saving boot time.",
+        "Creates a .automount unit (systemd.mount(5), systemd.automount(5)) that mounts the filesystem on-demand upon first access to the mount point.",
         "Recommended for network & USB drives",
     ),
     (
         "x-systemd.idle-timeout=5min",
         "systemd Idle Auto-Unmount",
-        "Automatically unmounts the filesystem after 5 minutes of inactivity to save power or safely disconnect network shares.",
+        "Configures the idle timeout of the automount unit (systemd.mount(5)); unmounts the filesystem after 5 minutes of inactivity.",
         "Safe / Power Saving",
     ),
     (
         "x-systemd.device-timeout=15s",
         "systemd Device Discovery Timeout",
-        "Configures how long systemd waits for the block device to show up at boot before timing out (default is 90s).",
+        "Configures how long systemd waits for the backing block device unit to appear before giving up on the mount entry (default is 90s, systemd.mount(5)).",
         "Safe / Speeds up boot with missing drives",
     ),
     (
+        "x-systemd.mount-timeout=30",
+        "systemd Mount Command Timeout",
+        "Configures how long systemd waits for the mount command itself to finish before timing out (recommended by Arch Wiki for remote filesystems or encrypted volumes).",
+        "Arch Wiki Fstab / systemd.mount(5)",
+    ),
+    (
         "x-systemd.requires=network-online.target",
-        "Wait for Network Online",
-        "Ensures network routing and interfaces are fully active before mounting this partition (NFS, SMB, SSHFS).",
+        "Order & Require Network Online",
+        "Configures a Requires= and After= dependency between the generated mount unit and network-online.target (systemd.mount(5)).",
         "Recommended for Network Storage",
     ),
     (
         "x-systemd.makefs",
-        "Auto-Format If Missing",
-        "Instructs systemd to automatically initialize and format the partition if no filesystem signature is detected.",
+        "Initialize Filesystem If Empty",
+        "Initializes the filesystem on the backing device if no filesystem signature is detected (systemd-makefs@.service(8)).",
         "Caution / Formats Empty Disks",
     ),
     (
         "x-systemd.growfs",
-        "Auto-Grow Filesystem",
-        "Expands the filesystem to fill the underlying partition boundary at mount time.",
+        "Grow Filesystem to Partition Size",
+        "Grows the mounted filesystem to occupy the full size of the backing block device if supported (systemd-growfs@.service(8)).",
         "Safe / Resized Partitions",
     ),
     (
         "_netdev",
         "Network-Dependent Filesystem",
-        "Informs mount tools that this filesystem depends on network connectivity.",
+        "Indicates the filesystem resides on a device that requires network access, delaying mount attempts until networking is enabled (mount(8)).",
         "Recommended for NFS / Samba",
     ),
     (
         "noauto",
-        "Do Not Mount At Boot",
-        "Prevents the partition from being mounted automatically during system boot or with 'mount -a'.",
+        "Do Not Mount Automatically",
+        "Can only be mounted explicitly; will not be mounted automatically at boot or when 'mount -a' is executed (mount(8)).",
         "Safe / Manual Mount Only",
+    ),
+    (
+        "relatime",
+        "Relative Inode Access Times",
+        "Updates inode access times relative to modify or change time (atime is only updated if previous atime is older than mtime/ctime, or >24h old; kernel default per mount(8)).",
+        "Safe / Kernel Default",
     ),
     # Btrfs / ZFS / Advanced Filesystem
     (
         "compress=zstd",
         "Btrfs Zstandard Compression",
-        "Enables high-performance Zstandard transparent compression on Btrfs.",
+        "Enables transparent Zstandard compression on Btrfs filesystems (btrfs(5)).",
         "Recommended for Btrfs",
     ),
     (
         "subvol=@home",
         "Btrfs Subvolume Mount",
-        "Mounts a specific Btrfs subvolume instead of the top-level root.",
+        "Mounts a specific Btrfs subvolume path instead of the top-level subvolume (btrfs(5)).",
         "Standard Btrfs",
     ),
     (
         "nodatacow",
-        "Disable Copy-On-Write (NoCoW)",
-        "Disables Copy-on-Write for Btrfs. Useful for database tables and virtual machine images to prevent fragmentation.",
+        "Disable Btrfs Copy-On-Write (nodatacow)",
+        "Disables Copy-on-Write for newly created files on Btrfs (implies nodatasum and disables compression, per btrfs(5)).",
         "Caution / Specialized Workloads",
     ),
     # Ownership & Permissions (FAT/NTFS)
     (
         "uid=1000,gid=1000",
-        "Set Default User/Group Owner",
-        "Sets the owning user and group ID for filesystems that do not support Linux file ownership (FAT32, exFAT, NTFS).",
-        "Recommended for USB Flash Drives",
+        "Set Owning User & Group ID",
+        "Sets the owner and group of all files on filesystems that do not store Unix ownership metadata (vfat, exfat, ntfs3; see mount(8)).",
+        "Recommended for FAT/exFAT/NTFS",
     ),
     (
         "umask=022",
-        "Default Permission Mask (755 / 644)",
-        "Sets file permission mask (rwxr-xr-x) for filesystems lacking POSIX permissions.",
+        "Permission Bitmask (umask)",
+        "Sets the bitmask of the permissions that are not present (022 yields 0755/rwxr-xr-x) on filesystems lacking POSIX permissions (mount(8)).",
         "Standard FAT/NTFS",
     ),
     (
+        "fmask=0177,dmask=0077",
+        "Restrictive EFI /boot Permissions (fmask=0177,dmask=0077)",
+        "Sets file permissions to 0600 and directory permissions to 0700 on FAT32/vfat EFI System Partitions (/boot or /efi), preventing unprivileged users from reading random seeds or initramfs images (Arch Wiki Fstab).",
+        "Recommended for /boot & EFI partitions",
+    ),
+    (
         "windows_names",
-        "Enforce Windows Filename Compatibility",
-        "Prevents creation of filenames containing characters prohibited on Windows (: * ? \" < > |).",
+        "Enforce Windows Filename Restrictions",
+        "Prevents creation of files using characters or reserved names disallowed by Windows on ntfs3 mounts.",
         "Safe for Dual-Boot",
     ),
     # Other
     (
+        "bind",
+        "Bind Mount Directory (bind)",
+        "Remounts an existing directory subtree (/olddir) at a second location (/newdir) with fstype 'none' (Arch Wiki Fstab §3.7 / mount(8)).",
+        "Standard Bind Mount",
+    ),
+    (
+        "size=2G",
+        "Maximum tmpfs RAM Disk Size (size=...)",
+        "Sets the upper limit on the size of a tmpfs mount in bytes, M, G, or % of RAM (defaults to 50% of RAM; Arch Wiki tmpfs).",
+        "tmpfs Mount Option",
+    ),
+    (
         "x-gvfs-show",
-        "Show in File Manager",
-        "Allows the filesystem to be visible in file managers like Nautilus, Thunar, and Dolphin.",
+        "Force Display in GVFS File Managers",
+        "Instructs GVFS/udisks2-based desktop file managers to display this mount entry in the sidebar.",
         "User Interface",
-    )
+    ),
 ]
 
 
@@ -139,15 +170,17 @@ class AdvancedFstabOptionDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("dlg_adv_title"))
-        self.resize(640, 440)
+        self.resize(740, 560)
+        self.setMinimumSize(620, 440)
         self.selected_option: str = ""
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(8)
+        layout.setContentsMargins(14, 14, 14, 14)
+        layout.setSpacing(10)
 
         # Search bar
         search_layout = QHBoxLayout()
+        search_layout.setSpacing(8)
         search_layout.addWidget(QLabel(tr("lbl_search_options")))
         self.txt_search = QLineEdit()
         self.txt_search.setPlaceholderText(tr("placeholder_search_adv"))
@@ -157,9 +190,10 @@ class AdvancedFstabOptionDialog(QDialog):
 
         # Options list
         self.list_widget = QListWidget()
+        self.list_widget.setSpacing(2)
         self.list_widget.itemDoubleClicked.connect(self._on_preset_double_clicked)
         self._populate_list()
-        layout.addWidget(self.list_widget)
+        layout.addWidget(self.list_widget, 1)
 
         # Custom entry
         custom_box = QGroupBox(tr("group_custom_option"))
@@ -176,17 +210,14 @@ class AdvancedFstabOptionDialog(QDialog):
         layout.addWidget(btn_box)
 
     def _populate_list(self) -> None:
-        self.list_widget.clear()
-        for opt_str, title, desc, badge in ADVANCED_FSTAB_OPTIONS:
-            item = QListWidgetItem(f"{opt_str}: {title}\n    {desc} ({badge})")
-            item.setData(Qt.ItemDataRole.UserRole, opt_str)
-            self.list_widget.addItem(item)
+        populate_option_catalog_list(self.list_widget, ADVANCED_FSTAB_OPTIONS)
 
     def _filter_list(self, text: str) -> None:
         needle = text.lower()
         for i in range(self.list_widget.count()):
             item = self.list_widget.item(i)
-            item.setHidden(needle not in item.text().lower())
+            searchable = item.data(Qt.ItemDataRole.UserRole + 1) or item.text().lower()
+            item.setHidden(needle not in searchable)
 
     def _on_preset_double_clicked(self, item: QListWidgetItem) -> None:
         self.selected_option = item.data(Qt.ItemDataRole.UserRole)
@@ -213,15 +244,60 @@ class FstabMainWindow(QMainWindow):
     FSTAB_PATH = "/etc/fstab"
 
     COMMON_OPTIONS = [
-        ("defaults", "Use default mount options (rw, suid, dev, exec, auto, nouser, async)", "Safe", "Standard for root & root-managed partitions"),
-        ("noatime", "Do not update inode access times on the filesystem. Can improve performance.", "Safe", "noatime on SSD drives reduces writes"),
-        ("ro", "Mount filesystem in read-only mode. Prevents any modifications.", "Hardening", "ro for backup storage or immutable mounts"),
-        ("nosuid", "Do not allow set-user-identifier or set-group-identifier bits to take effect. Prevents privilege escalation.", "Hardening", "nosuid on /tmp, /home, or USB storage"),
-        ("nodev", "Do not interpret character or block special devices on the filesystem. Prevents unauthorized device node creation.", "Hardening", "nodev on user-accessible drives"),
-        ("noexec", "Do not allow direct execution of any binaries on the mounted filesystem.", "Hardening", "noexec on /tmp or download partitions"),
-        ("nofail", "Do not report errors or halt boot if this drive is not plugged in.", "Recommended for external drives", "nofail on external USB drives & secondary storage"),
-        ("_netdev", "The filesystem requires network access (e.g. NFS, CIFS). Systemd waits until network is up before mounting.", "Recommended for network drives", "_netdev on NFS / Samba shares"),
-        ("user", "Allow ordinary (non-root) users to mount and unmount this filesystem.", "Caution", "user for external flash drives"),
+        (
+            "defaults",
+            "Use default mount options: rw, suid, dev, exec, auto, nouser, and async (mount(8)). Standard for root and local Linux partitions.",
+            "Standard Default",
+            "Standard for root & local filesystems",
+        ),
+        (
+            "noatime",
+            "Do not update inode access times on read operations (implies nodiratime, per mount(8)). Significantly reduces write amplification on SSD/NVMe storage (Arch Wiki Fstab).",
+            "Performance / Storage Wear Reduction",
+            "Recommended for SSD / NVMe drives",
+        ),
+        (
+            "ro",
+            "Mount the filesystem in read-only mode (mount(8)). Prevents accidental file deletion or unauthorized modifications.",
+            "Security Hardening",
+            "ro for backup volumes or read-only partitions",
+        ),
+        (
+            "nosuid",
+            "Do not honor set-user-ID and set-group-ID bits or file capabilities (mount(8)). Strongly recommended on /home, /tmp, and removable media (Arch Wiki Security).",
+            "Security Hardening",
+            "nosuid on /tmp, /home, or removable media",
+        ),
+        (
+            "nodev",
+            "Do not interpret character or block special devices on the mounted filesystem (mount(8)). Prevents unauthorized creation of device nodes (Arch Wiki Security).",
+            "Security Hardening",
+            "nodev on non-root and user-accessible partitions",
+        ),
+        (
+            "noexec",
+            "Do not permit direct binary execution from the mounted filesystem (mount(8)). Recommended on /tmp or pure data volumes to prevent malware execution.",
+            "Security Hardening",
+            "noexec on /tmp or data-only partitions",
+        ),
+        (
+            "nofail",
+            "Do not report errors or block system boot if the device is absent or fails to mount (mount(8), systemd.mount(5)). Prevents dropping to emergency recovery mode.",
+            "Recommended for External & Optional Storage",
+            "nofail on external USB drives & secondary storage",
+        ),
+        (
+            "_netdev",
+            "The filesystem resides on a device requiring network access (mount(8)). Delays mounting until the network stack is online, avoiding boot hangs.",
+            "Recommended for Network Storage",
+            "_netdev on NFS / CIFS / SMB shares",
+        ),
+        (
+            "user",
+            "Allow an ordinary non-root user to mount and unmount the filesystem (mount(8)). Implies noexec, nosuid, and nodev unless explicitly overridden.",
+            "Caution / Removable Media",
+            "user for removable media",
+        ),
     ]
 
     def __init__(self, fstab_path: str = "/etc/fstab"):
@@ -249,6 +325,7 @@ class FstabMainWindow(QMainWindow):
         self.preview_banner = LivePreviewBanner(
             title=tr("preview_title"),
             subtitle=tr("preview_subtitle"),
+            man_pages=["fstab(5)", "mount(8)", "systemd.mount(5)", "fsck(8)"],
         )
         self.preview_banner.diffRequested.connect(self._inspect_file_diff)
         main_layout.addWidget(self.preview_banner)
@@ -277,6 +354,7 @@ class FstabMainWindow(QMainWindow):
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.itemSelectionChanged.connect(self._on_table_selection_changed)
         splitter.addWidget(self.table)
 
@@ -303,8 +381,11 @@ class FstabMainWindow(QMainWindow):
             tr("tooltip_fs_spec_title"),
             tr("tooltip_fs_spec_syntax"),
             tr("tooltip_fs_spec_desc"),
-            tr("tooltip_fs_spec_safety"),
-            tr("tooltip_fs_spec_example"),
+            can_be_blank=False,
+            blank_behavior="Every /etc/fstab entry must specify a block device, UUID=/LABEL=, or remote share.",
+            recommended_value="UUID= or PARTUUID= (persistent across reboots)",
+            example=tr("tooltip_fs_spec_example"),
+            man_page="fstab(5)",
         ))
         self.txt_spec.textChanged.connect(self._on_entry_modified)
         params_grid.addWidget(self.txt_spec, 0, 1)
@@ -317,8 +398,10 @@ class FstabMainWindow(QMainWindow):
             tr("tooltip_mount_title"),
             tr("tooltip_mount_syntax"),
             tr("tooltip_mount_desc"),
-            tr("tooltip_mount_safety"),
-            tr("tooltip_mount_example"),
+            can_be_blank=False,
+            blank_behavior="Must specify a target directory path (or 'none' for swap partitions).",
+            example=tr("tooltip_mount_example"),
+            man_page="fstab(5)",
         ))
         self.txt_mount.textChanged.connect(self._on_entry_modified)
         params_grid.addWidget(self.txt_mount, 0, 3)
@@ -328,6 +411,14 @@ class FstabMainWindow(QMainWindow):
         self.cmb_fstype = QComboBox()
         self.cmb_fstype.setEditable(True)
         self.cmb_fstype.addItems(["ext4", "btrfs", "xfs", "vfat", "ntfs3", "exfat", "swap", "nfs", "auto"])
+        self.cmb_fstype.setToolTip(format_tooltip(
+            "Filesystem Type (fs_vfstype)",
+            "ext4 | btrfs | xfs | vfat | swap | auto",
+            "Third field (<code>fs_vfstype</code>) of <code>/etc/fstab</code>. Specifies the type of filesystem on the partition.",
+            can_be_blank=False,
+            blank_behavior="Must specify the filesystem type (or 'auto' to let mount(8) detect it).",
+            man_page="fstab(5)",
+        ))
         self.cmb_fstype.currentTextChanged.connect(self._on_entry_modified)
         params_grid.addWidget(self.cmb_fstype, 1, 1)
 
@@ -340,6 +431,9 @@ class FstabMainWindow(QMainWindow):
             tr("tooltip_dump_title"),
             tr("tooltip_dump_syntax"),
             tr("tooltip_dump_desc"),
+            default_value="0",
+            recommended_value="0 (dump backup utility is rarely used on modern systems)",
+            man_page="fstab(5)",
         ))
         self.spn_dump.valueChanged.connect(self._on_entry_modified)
         spin_layout.addWidget(self.spn_dump)
@@ -351,7 +445,9 @@ class FstabMainWindow(QMainWindow):
             tr("tooltip_pass_title"),
             tr("tooltip_pass_syntax"),
             tr("tooltip_pass_desc"),
-            tr("tooltip_pass_safety"),
+            default_value="0",
+            recommended_value=tr("tooltip_pass_safety"),
+            man_page="fstab(5)",
         ))
         self.spn_pass.valueChanged.connect(self._on_entry_modified)
         spin_layout.addWidget(self.spn_pass)
@@ -367,7 +463,14 @@ class FstabMainWindow(QMainWindow):
         self.option_checkboxes: dict[str, QCheckBox] = {}
         for idx, (opt, desc, impact, example) in enumerate(self.COMMON_OPTIONS):
             chk = QCheckBox(opt)
-            chk.setToolTip(format_tooltip(tr("tooltip_mount_option_prefix", opt=opt), opt, desc, impact, example))
+            chk.setToolTip(format_tooltip(
+                tr("tooltip_mount_option_prefix", opt=opt),
+                opt,
+                desc,
+                impact,
+                example,
+                man_page="mount(8)",
+            ))
             chk.toggled.connect(self._on_entry_modified)
             self.option_checkboxes[opt] = chk
             row = idx // 5
@@ -383,7 +486,7 @@ class FstabMainWindow(QMainWindow):
 
         adv_bar = QHBoxLayout()
         self.lbl_adv_count = QLabel(tr("lbl_adv_count"))
-        self.lbl_adv_count.setStyleSheet("color: #6899e6; font-weight: bold; font-size: 11px;")
+        self.lbl_adv_count.setStyleSheet("color: #6899e6; font-weight: 600; font-size: 12px;")
         adv_bar.addWidget(self.lbl_adv_count)
         adv_bar.addStretch()
 
@@ -399,6 +502,7 @@ class FstabMainWindow(QMainWindow):
         self.tbl_adv.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.tbl_adv.setColumnWidth(1, 90)
         self.tbl_adv.setFixedHeight(100)
+        self.tbl_adv.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         adv_layout.addWidget(self.tbl_adv)
 
         form_layout.addWidget(adv_group)
@@ -500,7 +604,7 @@ class FstabMainWindow(QMainWindow):
             self.tbl_adv.insertRow(idx)
             self.tbl_adv.setItem(idx, 0, QTableWidgetItem(opt))
             btn_del = QPushButton(tr("btn_remove_adv"))
-            btn_del.setStyleSheet("font-size: 11px; padding: 2px 6px;")
+            btn_del.setStyleSheet("font-size: 12px; padding: 2px 8px;")
             btn_del.clicked.connect(lambda _, o=opt: self._remove_advanced_option(o))
             self.tbl_adv.setCellWidget(idx, 1, btn_del)
 

@@ -1,6 +1,6 @@
 [project]
 name = "linux-gui-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shared UI components, live preview banners, diff inspectors, and safe executors for Linux system GUIs"
 requires-python = ">=3.12"
 dependencies = [

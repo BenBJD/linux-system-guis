@@ -11,7 +11,7 @@ EN: dict[str, str] = {
     "window_title": "Linux System GUIs",
     "header_title": "Linux System GUIs",
     "header_subtitle": "Real-time command previews, dry-run checks, and detailed tooltips.",
-    "filter_placeholder": "🔍 Filter tools (e.g. device, logs, sudo, fstab, boot)...",
+    "filter_placeholder": "Filter tools (e.g. device, logs, sudo, fstab, boot)...",
     "btn_open": "Open",
 
     # Tool rows
@@ -30,8 +30,8 @@ EN: dict[str, str] = {
     "tool_udev_title": "udev Rules Builder",
     "tool_udev_category": "Hardware & Devices",
     "tool_udev_desc": (
-        "Create and modify device rules in /etc/udev/rules.d/ with matching vendor IDs, permission modes (0666), "
-        "sleep wakeup toggles, uaccess tags, and daemon reloads."
+        "Create and modify device rules in /etc/udev/rules.d/ with matching vendor IDs, permission modes (0660), "
+        "sleep wakeup toggles, desktop seat uaccess tags, and daemon reloads."
     ),
     "tool_systemd_title": "systemd Services & Timers",
     "tool_systemd_category": "Init & Daemons",

@@ -13,7 +13,7 @@ fi
 echo "==> Building Arch Linux package (makepkg)..."
 cd "$SCRIPT_DIR/arch"
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 TAR_NAME="linux-system-guis-${VERSION}.tar.gz"
 
 # Clean previous build artifacts

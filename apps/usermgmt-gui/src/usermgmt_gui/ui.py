@@ -33,15 +33,20 @@ from usermgmt_gui.strings import tr
 
 
 COMMON_SECURITY_GROUPS = [
-    ("wheel", "Full administrative privileges via sudo/su (RHEL/Fedora/Arch convention).", "Critical / Root Privilege", "wheel"),
-    ("sudo", "Full administrative privileges via sudo command (Debian/Ubuntu convention).", "Critical / Root Privilege", "sudo"),
-    ("docker", "Read/write access to Docker daemon Unix socket. Root-equivalent privileges!", "Critical / Root Equivalent", "docker"),
-    ("dialout", "Direct access to serial communication ports (/dev/ttyUSB*, /dev/ttyACM*). Essential for Arduino, 3D printers.", "Safe / Hardware Access", "dialout"),
-    ("audio", "Direct access to audio hardware (/dev/snd/*).", "Safe", "audio"),
-    ("video", "Direct access to video capture cards, webcams, and GPU devices (/dev/video*, /dev/dri/*).", "Safe", "video"),
-    ("plugdev", "Allows mounting and unmounting removable USB storage devices without root.", "Safe", "plugdev"),
-    ("input", "Direct access to kernel input event nodes (/dev/input/*). Needed for input remappers.", "Caution / Keylogging Risk", "input"),
-    ("kvm", "Access to kernel virtualization acceleration devices (/dev/kvm).", "Safe / Virtualization", "kvm"),
+    ("wheel", "Administrative group used by pam_wheel(8) and commonly configured in sudoers(5) / polkit(8) for root privilege escalation on Arch Linux, Fedora, and openSUSE.", "Critical / Root Privilege", "wheel"),
+    ("sudo", "Administrative group configured in Debian/Ubuntu default sudoers(5) rules to grant root access via sudo(8).", "Critical / Root Privilege", "sudo"),
+    ("docker", "Grants read/write access to /var/run/docker.sock. Any user in this group can launch privileged containers with full host root access.", "Critical / Root Equivalent", "docker"),
+    ("disk", "Grants direct raw read/write access to block devices. Bypasses all filesystem permissions; equivalent to unrestricted root access.", "Critical / Root Equivalent", "disk"),
+    ("input", "Grants direct read access to kernel input event streams (/dev/input/*). Any process run by this user can capture raw keystrokes system-wide (Arch Wiki: Keylogger Exposure).", "Critical Risk / Keylogger Exposure", "input"),
+    ("audio", "Grants direct access to /dev/snd/* audio nodes. Note: per Arch Wiki, users should NOT be added manually on modern systemd systems; logind dynamically grants seat ACLs via TAG+=\"uaccess\".", "Caution / Deprecated by systemd uaccess", "audio"),
+    ("video", "Grants direct access to /dev/video* and /dev/dri/* nodes. Note: per Arch Wiki, users should NOT be added manually on modern systemd systems; logind dynamically grants seat ACLs.", "Caution / Deprecated by systemd uaccess", "video"),
+    ("plugdev", "Legacy group for removable storage and peripherals. Deprecated on modern systemd systems in favor of logind seat uaccess ACLs.", "Caution / Deprecated by systemd uaccess", "plugdev"),
+    ("uucp", "Standard Arch Linux and Red Hat group granting direct read/write access to serial communication devices (/dev/ttyUSB*, /dev/ttyACM*).", "Hardware Access (Serial / Arch)", "uucp"),
+    ("dialout", "Debian and Ubuntu group granting direct read/write access to serial communication devices (/dev/ttyS*, /dev/ttyUSB*).", "Hardware Access (Serial / Debian)", "dialout"),
+    ("systemd-journal", "Grants permission to view system journal logs and daemon output via journalctl without requiring root privileges.", "Auditing / Non-Root Access", "systemd-journal"),
+    ("wireshark", "Grants permission to capture live network packets without root privileges using filesystem capabilities (CAP_NET_RAW / CAP_NET_ADMIN).", "Diagnostic / Capability Access", "wireshark"),
+    ("kvm", "Grants access to the /dev/kvm kernel virtual machine hardware acceleration character device.", "Virtualization Access", "kvm"),
+    ("libvirt", "Grants access to manage local QEMU/KVM virtual machines, storage pools, and virtual networks via the libvirt daemon.", "Virtualization Administration", "libvirt"),
 ]
 
 
@@ -63,6 +68,7 @@ class CreateUserDialog(QDialog):
         self.preview_banner = LivePreviewBanner(
             title=tr("dlg_create_preview_title"),
             subtitle=tr("dlg_create_preview_subtitle"),
+            man_pages=["useradd(8)", "passwd(5)", "group(5)"],
         )
         layout.addWidget(self.preview_banner)
 
@@ -79,8 +85,10 @@ class CreateUserDialog(QDialog):
             tr("tooltip_username_title"),
             tr("tooltip_username_syntax"),
             tr("tooltip_username_desc"),
-            tr("tooltip_username_impact"),
-            tr("tooltip_username_example"),
+            can_be_blank=False,
+            blank_behavior="A valid lowercase Linux login name is required to create an account.",
+            example=tr("tooltip_username_example"),
+            man_page="useradd(8)",
         ))
         self.txt_username.textChanged.connect(self._update_preview)
         form_grid.addWidget(self.txt_username, 0, 1)
@@ -93,8 +101,10 @@ class CreateUserDialog(QDialog):
             tr("tooltip_gecos_title"),
             tr("tooltip_gecos_syntax"),
             tr("tooltip_gecos_desc"),
-            tr("tooltip_gecos_impact"),
-            tr("tooltip_gecos_example"),
+            can_be_blank=True,
+            blank_behavior="Omits the -c GECOS comment flag; the comment field in /etc/passwd remains empty.",
+            example=tr("tooltip_gecos_example"),
+            man_page="useradd(8)",
         ))
         self.txt_gecos.textChanged.connect(self._update_preview)
         form_grid.addWidget(self.txt_gecos, 0, 3)
@@ -115,6 +125,7 @@ class CreateUserDialog(QDialog):
             tr("tooltip_shell_title"),
             tr("tooltip_shell_syntax"),
             tr("tooltip_shell_desc"),
+            man_page="useradd(8)",
         ))
         self.cmb_shell.currentTextChanged.connect(self._update_preview)
         form_grid.addWidget(self.cmb_shell, 1, 1)
@@ -127,6 +138,7 @@ class CreateUserDialog(QDialog):
             tr("tooltip_home_syntax"),
             tr("tooltip_home_desc"),
             tr("tooltip_home_impact"),
+            man_page="useradd(8)",
         ))
         self.chk_home.toggled.connect(self._update_preview)
         form_grid.addWidget(self.chk_home, 1, 2, 1, 2)
@@ -142,7 +154,7 @@ class CreateUserDialog(QDialog):
         for idx, (g_name, desc, impact, example) in enumerate(COMMON_SECURITY_GROUPS):
             if g_name in self.available_groups or g_name in ("wheel", "sudo", "docker"):
                 chk = QCheckBox(g_name)
-                chk.setToolTip(format_tooltip(tr("tooltip_group_prefix", group=g_name), tr("tooltip_group_syntax", group=g_name), desc, impact, example))
+                chk.setToolTip(format_tooltip(tr("tooltip_group_prefix", group=g_name), tr("tooltip_group_syntax", group=g_name), desc, impact, example, man_page="group(5)"))
                 chk.toggled.connect(self._update_preview)
                 self.group_checkboxes[g_name] = chk
                 row = len(self.group_checkboxes) // 4
@@ -234,6 +246,7 @@ class UserMgmtMainWindow(QMainWindow):
         self.preview_banner = LivePreviewBanner(
             title=tr("preview_title"),
             subtitle=tr("preview_subtitle"),
+            man_pages=["usermod(8)", "useradd(8)", "userdel(8)", "passwd(5)", "group(5)", "nologin(8)"],
         )
         layout.addWidget(self.preview_banner)
 
@@ -319,6 +332,7 @@ class UserMgmtMainWindow(QMainWindow):
             tr("tooltip_user_shell_desc"),
             tr("tooltip_user_shell_impact"),
             tr("tooltip_user_shell_example"),
+            man_page="usermod(8)",
         ))
         self.cmb_shell.currentTextChanged.connect(self._on_form_modified)
         details_grid.addWidget(self.cmb_shell, 0, 3)
@@ -333,7 +347,7 @@ class UserMgmtMainWindow(QMainWindow):
         self.curated_checkboxes: dict[str, QCheckBox] = {}
         for idx, (grp_name, desc, sec_impact, example) in enumerate(self.SECURITY_GROUPS):
             chk = QCheckBox(grp_name)
-            chk.setToolTip(format_tooltip(tr("tooltip_group_prefix", group=grp_name), tr("tooltip_member_of", group=grp_name), desc, sec_impact, example))
+            chk.setToolTip(format_tooltip(tr("tooltip_group_prefix", group=grp_name), tr("tooltip_member_of", group=grp_name), desc, sec_impact, example, man_page="usermod(8)"))
             chk.toggled.connect(lambda checked, g=grp_name: self._on_curated_group_toggled(g, checked))
             self.curated_checkboxes[grp_name] = chk
             row = idx // 4

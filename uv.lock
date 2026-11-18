@@ -21,7 +21,7 @@ members = [
 
 [[package]]
 name = "bootloader-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/bootloader-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -55,7 +55,7 @@ wheels = [
 
 [[package]]
 name = "device-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/device-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -66,7 +66,7 @@ requires-dist = [{ name = "linux-gui-core", editable = "packages/core" }]
 
 [[package]]
 name = "fstab-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/fstab-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -95,7 +95,7 @@ wheels = [
 
 [[package]]
 name = "journal-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/journal-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -106,7 +106,7 @@ requires-dist = [{ name = "linux-gui-core", editable = "packages/core" }]
 
 [[package]]
 name = "linux-gui-core"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "pyqt6" },
@@ -117,7 +117,7 @@ requires-dist = [{ name = "pyqt6", specifier = ">=6.7.0" }]
 
 [[package]]
 name = "linux-system-guis"
-version = "0.1.0"
+version = "0.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "bootloader-gui" },
@@ -170,7 +170,7 @@ dev = [
 
 [[package]]
 name = "linux-system-guis-launcher"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/launcher" }
 dependencies = [
     { name = "bootloader-gui" },
@@ -210,7 +210,7 @@ wheels = [
 
 [[package]]
 name = "permissions-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/permissions-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -336,7 +336,7 @@ wheels = [
 
 [[package]]
 name = "sudoers-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/sudoers-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -347,7 +347,7 @@ requires-dist = [{ name = "linux-gui-core", editable = "packages/core" }]
 
 [[package]]
 name = "sysctl-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/sysctl-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -358,7 +358,7 @@ requires-dist = [{ name = "linux-gui-core", editable = "packages/core" }]
 
 [[package]]
 name = "systemd-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/systemd-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -378,7 +378,7 @@ wheels = [
 
 [[package]]
 name = "udev-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/udev-gui" }
 dependencies = [
     { name = "linux-gui-core" },
@@ -389,7 +389,7 @@ requires-dist = [{ name = "linux-gui-core", editable = "packages/core" }]
 
 [[package]]
 name = "usermgmt-gui"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "apps/usermgmt-gui" }
 dependencies = [
     { name = "linux-gui-core" },

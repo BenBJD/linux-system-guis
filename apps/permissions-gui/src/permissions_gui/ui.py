@@ -59,6 +59,7 @@ class PermissionsMainWindow(QMainWindow):
         self.preview_banner = LivePreviewBanner(
             title=tr("preview_title"),
             subtitle=tr("preview_subtitle"),
+            man_pages=["acl(5)", "setfacl(1)", "getfacl(1)", "chattr(1)", "lsattr(1)"],
         )
         layout.addWidget(self.preview_banner)
 
@@ -145,7 +146,9 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_principal_title"),
             tr("tooltip_principal_syntax"),
             tr("tooltip_principal_desc"),
-            tr("tooltip_principal_impact"),
+            can_be_blank=False,
+            blank_behavior="Must specify a valid Linux username or group name to grant the extended ACL entry.",
+            man_page="setfacl(1)",
         ))
         self.txt_principal.textChanged.connect(self._update_acl_preview)
         grant_grid.addWidget(self.txt_principal, 0, 3)
@@ -177,6 +180,7 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_default_syntax"),
             tr("tooltip_default_desc"),
             tr("tooltip_default_impact"),
+            man_page="setfacl(1)",
         ))
         self.chk_default.toggled.connect(self._update_acl_preview)
         flags_bar.addWidget(self.chk_default)
@@ -186,6 +190,7 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_recursive_title"),
             tr("tooltip_recursive_syntax"),
             tr("tooltip_recursive_desc"),
+            man_page="setfacl(1)",
         ))
         self.chk_recursive.toggled.connect(self._update_acl_preview)
         flags_bar.addWidget(self.chk_recursive)
@@ -250,6 +255,7 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_attr_i_syntax"),
             tr("tooltip_attr_i_desc"),
             tr("tooltip_attr_i_impact"),
+            man_page="chattr(1)",
         ))
         flags_grid.addWidget(self.chk_attr_i, 0, 0)
 
@@ -259,6 +265,7 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_attr_a_syntax"),
             tr("tooltip_attr_a_desc"),
             tr("tooltip_attr_a_impact"),
+            man_page="chattr(1)",
         ))
         flags_grid.addWidget(self.chk_attr_a, 1, 0)
 
@@ -267,6 +274,7 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_attr_d_title"),
             tr("tooltip_attr_d_syntax"),
             tr("tooltip_attr_d_desc"),
+            man_page="chattr(1)",
         ))
         flags_grid.addWidget(self.chk_attr_d, 2, 0)
 
@@ -275,6 +283,7 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_attr_c_title"),
             tr("tooltip_attr_c_syntax"),
             tr("tooltip_attr_c_desc"),
+            man_page="chattr(1)",
         ))
         flags_grid.addWidget(self.chk_attr_c, 3, 0)
 
@@ -283,6 +292,7 @@ class PermissionsMainWindow(QMainWindow):
             tr("tooltip_attr_s_title"),
             tr("tooltip_attr_s_syntax"),
             tr("tooltip_attr_s_desc"),
+            man_page="chattr(1)",
         ))
         flags_grid.addWidget(self.chk_attr_s, 4, 0)
 

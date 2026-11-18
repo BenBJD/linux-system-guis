@@ -50,7 +50,7 @@ EN: dict[str, str] = {
     "tooltip_extra_args_desc": "Space-separated custom kernel arguments appended to the boot command line.",
 
     # Action bar
-    "btn_save": "💾 Save && Regenerate Bootloader",
+    "btn_save": "Save && Regenerate Bootloader",
     "tooltip_save": "Creates backup of configuration files, saves new parameters, and executes the bootloader regeneration command.",
 
     # Preview subtitles

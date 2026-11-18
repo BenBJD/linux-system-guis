@@ -13,11 +13,11 @@ EN: dict[str, str] = {
     "lbl_scope": "Scope:",
     "rb_system": "System Logs (All Daemons & Kernel)",
     "rb_user": "User Session (--user)",
-    "btn_refresh": "🔄 Refresh Logs",
+    "btn_refresh": "Refresh Logs",
 
     # Tabs
-    "tab_logs": "📜 Log Explorer",
-    "tab_maint": "🧹 Maintenance & Disk Cleanup",
+    "tab_logs": "Log Explorer",
+    "tab_maint": "Maintenance & Disk Cleanup",
 
     # Filter controls
     "group_filters": "Filter Criteria (Narrow down your logs)",
@@ -39,9 +39,9 @@ EN: dict[str, str] = {
 
     "lbl_search_pattern": "Search Pattern (-g):",
     "placeholder_grep": "Filter text string (e.g. failed, disconnect, timeout)...",
-    "tooltip_grep_title": "Pattern Match",
-    "tooltip_grep_syntax": "-g <pattern>",
-    "tooltip_grep_desc": "Regular expression or substring filter for journal messages.",
+    "tooltip_grep_title": "PCRE2 Pattern Match (--grep)",
+    "tooltip_grep_syntax": "-g <pattern> / --grep=<pattern>",
+    "tooltip_grep_desc": "Filters journal entries where the <code>MESSAGE=</code> field matches the specified Perl-compatible regular expression (PCRE2). If the pattern is all lowercase, matching is case-insensitive; otherwise, matching is case-sensitive.",
     "tooltip_grep_impact": "Safe",
 
     "lbl_line_limit": "Line Limit (-n):",
@@ -49,11 +49,11 @@ EN: dict[str, str] = {
     "tooltip_lines_syntax": "-n <count>",
     "tooltip_lines_desc": "Controls how many recent entries to display.",
 
-    "btn_apply_filters": "🔍 Apply Filters && Search",
+    "btn_apply_filters": "Apply Filters && Search",
     "lbl_status_ready": "Ready",
     "lbl_status_showing": "Showing {count} log entries",
-    "btn_copy_logs": "📋 Copy Visible Logs",
-    "btn_export_logs": "💾 Export to .log File",
+    "btn_copy_logs": "Copy Visible Logs",
+    "btn_export_logs": "Export to .log File",
 
     # Maintenance tab
     "group_usage": "Current Journal Disk Usage",
@@ -61,20 +61,20 @@ EN: dict[str, str] = {
     "lbl_usage_desc": "Systemd stores system logs under /var/log/journal. Over months, archived logs can consume multiple gigabytes of disk space. You can safely vacuum old logs without affecting system stability.",
 
     "group_vacuum_time": "Cleanup by Retention Age (--vacuum-time)",
-    "btn_vac_7d": "🧹 Vacuum older than 7 Days (--vacuum-time=7d)",
+    "btn_vac_7d": "Vacuum older than 7 Days (--vacuum-time=7d)",
     "tooltip_vac_time_title": "Vacuum by Time",
     "tooltip_vac_time_syntax": "journalctl --vacuum-time=7d",
-    "tooltip_vac_time_desc": "Deletes archived logs older than 7 days.",
+    "tooltip_vac_time_desc": "Deletes archived journal logs older than 7 days using journalctl --vacuum-time (journalctl(1)). Active journal files from the current running boot session are never deleted.",
     "tooltip_vac_time_impact": "Safe / Recommended",
-    "btn_vac_14d": "🧹 Vacuum older than 2 Weeks (--vacuum-time=14d)",
-    "btn_vac_30d": "🧹 Vacuum older than 1 Month (--vacuum-time=30d)",
-    "btn_vac_custom_time": "🧹 Custom Age Vacuum...",
+    "btn_vac_14d": "Vacuum older than 2 Weeks (--vacuum-time=14d)",
+    "btn_vac_30d": "Vacuum older than 1 Month (--vacuum-time=30d)",
+    "btn_vac_custom_time": "Custom Age Vacuum...",
 
     "group_vacuum_size": "Cleanup by Maximum Disk Size (--vacuum-size)",
-    "btn_vac_200m": "📦 Vacuum to max 200 MB (--vacuum-size=200M)",
-    "btn_vac_500m": "📦 Vacuum to max 500 MB (--vacuum-size=500M)",
-    "btn_vac_1g": "📦 Vacuum to max 1 GB (--vacuum-size=1G)",
-    "btn_vac_custom_sz": "📦 Custom Size Vacuum...",
+    "btn_vac_200m": "Vacuum to max 200 MB (--vacuum-size=200M)",
+    "btn_vac_500m": "Vacuum to max 500 MB (--vacuum-size=500M)",
+    "btn_vac_1g": "Vacuum to max 1 GB (--vacuum-size=1G)",
+    "btn_vac_custom_sz": "Custom Size Vacuum...",
 
     # Boot sessions
     "opt_current_boot": "Current Boot (0)",

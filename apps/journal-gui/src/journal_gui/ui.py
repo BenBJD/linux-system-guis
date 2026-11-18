@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from linux_gui_core.widgets.loading_modal import run_with_loading_modal
 from linux_gui_core.widgets.preview_banner import LivePreviewBanner
 from linux_gui_core.widgets.safety_dialog import SafetyExecutionDialog
 from linux_gui_core.widgets.tooltips import format_tooltip
@@ -63,6 +64,7 @@ class JournalMainWindow(QMainWindow):
         self.preview_banner = LivePreviewBanner(
             title=tr("preview_title"),
             subtitle=tr("preview_subtitle"),
+            man_pages=["journalctl(1)", "journald.conf(5)", "systemd-journald.service(8)"],
         )
         layout.addWidget(self.preview_banner)
 
@@ -111,6 +113,7 @@ class JournalMainWindow(QMainWindow):
             tr("tooltip_boot_desc"),
             tr("tooltip_boot_impact"),
             tr("tooltip_boot_example"),
+            man_page="journalctl(1)",
         ))
         self.cmb_boot.currentIndexChanged.connect(self._on_filter_changed)
         filter_grid.addWidget(self.cmb_boot, 0, 1)
@@ -132,8 +135,10 @@ class JournalMainWindow(QMainWindow):
             tr("tooltip_unit_title"),
             tr("tooltip_unit_syntax"),
             tr("tooltip_unit_desc"),
-            tr("tooltip_unit_impact"),
-            tr("tooltip_unit_example"),
+            can_be_blank=True,
+            blank_behavior="Shows logs across all system units and kernel activity without unit filtering.",
+            example=tr("tooltip_unit_example"),
+            man_page="journalctl(1)",
         ))
         self.txt_unit.textChanged.connect(self._on_filter_changed)
         filter_grid.addWidget(self.txt_unit, 1, 1)
@@ -146,7 +151,9 @@ class JournalMainWindow(QMainWindow):
             tr("tooltip_grep_title"),
             tr("tooltip_grep_syntax"),
             tr("tooltip_grep_desc"),
-            tr("tooltip_grep_impact"),
+            can_be_blank=True,
+            blank_behavior="No regex filter is applied; all log messages matching the boot/priority filters are shown.",
+            man_page="journalctl(1)",
         ))
         self.txt_grep.textChanged.connect(self._on_filter_changed)
         filter_grid.addWidget(self.txt_grep, 1, 3)
@@ -157,7 +164,13 @@ class JournalMainWindow(QMainWindow):
         self.spn_lines.setRange(20, 5000)
         self.spn_lines.setValue(200)
         self.spn_lines.setSingleStep(50)
-        self.spn_lines.setToolTip(format_tooltip(tr("tooltip_lines_title"), tr("tooltip_lines_syntax"), tr("tooltip_lines_desc")))
+        self.spn_lines.setToolTip(format_tooltip(
+            tr("tooltip_lines_title"),
+            tr("tooltip_lines_syntax"),
+            tr("tooltip_lines_desc"),
+            default_value="200 (in this viewer)",
+            man_page="journalctl(1)",
+        ))
         self.spn_lines.valueChanged.connect(self._on_filter_changed)
         filter_grid.addWidget(self.spn_lines, 2, 1)
 
@@ -212,7 +225,7 @@ class JournalMainWindow(QMainWindow):
 
         lbl_usage_desc = QLabel(tr("lbl_usage_desc"))
         lbl_usage_desc.setWordWrap(True)
-        lbl_usage_desc.setStyleSheet("color: #9498a1; font-size: 11px;")
+        lbl_usage_desc.setStyleSheet("color: #9ea4b0; font-size: 12.5px;")
         usage_card_layout.addWidget(lbl_usage_desc)
         maint_layout.addWidget(usage_card)
 
@@ -271,7 +284,13 @@ class JournalMainWindow(QMainWindow):
         self.cmb_boot.clear()
         self.cmb_boot.addItem(tr("opt_current_boot"), "0")
         self.cmb_boot.addItem(tr("opt_prev_boot"), "-1")
-        for offset, label in JournalBackend.list_boot_sessions():
+        sessions = run_with_loading_modal(
+            self,
+            title="Loading System Journal...",
+            subtitle="Inspecting journalctl boot sessions...",
+            task_fn=JournalBackend.list_boot_sessions,
+        )
+        for offset, label in sessions:
             if offset not in ("0", "-1"):
                 self.cmb_boot.addItem(label, offset)
         self.cmb_boot.addItem(tr("opt_all_boot"), "all")
@@ -295,7 +314,12 @@ class JournalMainWindow(QMainWindow):
         lines = self.spn_lines.value()
         user_mode = self.rb_user.isChecked()
 
-        cmd_str, raw_output = JournalBackend.fetch_logs(boot, unit, priority, grep, lines, user_mode)
+        cmd_str, raw_output = run_with_loading_modal(
+            self,
+            title="Loading System Journal...",
+            subtitle="Querying journalctl log entries...",
+            task_fn=lambda: JournalBackend.fetch_logs(boot, unit, priority, grep, lines, user_mode),
+        )
         self.preview_banner.set_text(cmd_str)
 
         # Colorize output
@@ -319,7 +343,12 @@ class JournalMainWindow(QMainWindow):
         self.txt_logs.setHtml(f"<pre style='font-family: monospace; line-height: 1.3;'>{'<br>'.join(html_lines)}</pre>")
 
     def _refresh_disk_usage(self) -> None:
-        usage = JournalBackend.get_disk_usage()
+        usage = run_with_loading_modal(
+            self,
+            title="Loading System Journal...",
+            subtitle="Calculating journal disk usage...",
+            task_fn=JournalBackend.get_disk_usage,
+        )
         self.lbl_disk_usage.setText(f"💾 {usage}")
 
     def _copy_logs(self) -> None:

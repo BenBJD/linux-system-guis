@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from linux_gui_core.theme import apply_theme
+from linux_gui_core.widgets.loading_modal import LoadingModal
 from linux_system_guis.strings import tr
 from fstab_gui.ui import FstabMainWindow
 from udev_gui.ui import UdevMainWindow
@@ -35,71 +36,80 @@ class LauncherCard(QFrame):
     def __init__(self, title: str, icon: str, category: str, desc: str, on_launch, parent=None):
         super().__init__(parent)
         self._on_launch = on_launch
+        self.setObjectName("launcherCard")
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setStyleSheet(
             """
-            QFrame {
-                background-color: #222428;
-                border: 1px solid #2d3036;
-                border-radius: 4px;
+            QFrame#launcherCard {
+                background-color: #1a1d24;
+                border: 1px solid #282d38;
+                border-radius: 6px;
             }
-            QFrame:hover {
-                border-color: #3574d4;
-                background-color: #26292f;
+            QFrame#launcherCard:hover {
+                border-color: #388bfd;
+                background-color: #202530;
+            }
+            QLabel {
+                border: none;
+                background: transparent;
             }
             """
         )
 
         row_layout = QHBoxLayout(self)
-        row_layout.setContentsMargins(10, 6, 10, 6)
-        row_layout.setSpacing(12)
+        row_layout.setContentsMargins(14, 10, 14, 10)
+        row_layout.setSpacing(14)
 
         # 0: Icon
         icon_lbl = QLabel(icon)
-        icon_lbl.setStyleSheet("font-size: 20px;")
-        icon_lbl.setFixedWidth(28)
+        icon_lbl.setStyleSheet("font-size: 22px; border: none; background: transparent;")
+        icon_lbl.setFixedWidth(32)
         icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         row_layout.addWidget(icon_lbl)
 
         # Title & Category Box (fixed width to align descriptions neatly)
         title_box = QVBoxLayout()
-        title_box.setSpacing(1)
+        title_box.setContentsMargins(0, 0, 0, 0)
+        title_box.setSpacing(2)
 
         # 1: Category
         cat_lbl = QLabel(category.upper())
-        cat_lbl.setStyleSheet("font-size: 9px; font-weight: bold; color: #729fe6; letter-spacing: 0.5px;")
+        cat_lbl.setStyleSheet(
+            "font-size: 10.5px; font-weight: 700; color: #85abf2; letter-spacing: 0.6px; border: none; background: transparent;"
+        )
         title_box.addWidget(cat_lbl)
 
         # 2: Title
         title_lbl = QLabel(title)
-        title_lbl.setStyleSheet("font-size: 13px; font-weight: 600; color: #e3e5e8;")
+        title_lbl.setStyleSheet("font-size: 14px; font-weight: 600; color: #f0f3f6; border: none; background: transparent;")
         title_box.addWidget(title_lbl)
 
         title_container = QWidget()
+        title_container.setStyleSheet("border: none; background: transparent;")
         title_container.setLayout(title_box)
-        title_container.setFixedWidth(220)
+        title_container.setFixedWidth(250)
         row_layout.addWidget(title_container)
 
         # 3: Description
         desc_lbl = QLabel(desc)
         desc_lbl.setWordWrap(True)
-        desc_lbl.setStyleSheet("color: #9498a1; font-size: 11px; line-height: 1.3;")
+        desc_lbl.setStyleSheet("color: #9198a1; font-size: 12.5px; line-height: 1.4; border: none; background: transparent;")
         row_layout.addWidget(desc_lbl, stretch=1)
 
         # Open Button
         btn_launch = QPushButton(tr("btn_open"))
         btn_launch.setObjectName("primaryBtn")
-        btn_launch.setFixedHeight(24)
-        btn_launch.setFixedWidth(64)
-        btn_launch.setStyleSheet("font-size: 11px; padding: 2px 6px;")
+        btn_launch.setFixedHeight(28)
+        btn_launch.setFixedWidth(74)
+        btn_launch.setStyleSheet("font-size: 12px; font-weight: 600; padding: 3px 10px;")
         btn_launch.clicked.connect(self._on_launch)
         row_layout.addWidget(btn_launch)
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(event.position().toPoint()):
             self._on_launch()
-        super().mousePressEvent(event)
+        super().mouseReleaseEvent(event)
 
 
 class LauncherMainWindow(QMainWindow):
@@ -127,17 +137,17 @@ class LauncherMainWindow(QMainWindow):
         title_bar.setSpacing(10)
 
         title_col = QVBoxLayout()
-        title_col.setSpacing(2)
+        title_col.setSpacing(3)
 
         title = QLabel(tr("header_title"))
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #e3e5e8;")
+        title.setStyleSheet("font-size: 20px; font-weight: 700; color: #f0f3f6;")
         title_col.addWidget(title)
 
         subtitle = QLabel(
             "Safe, transparent desktop tools for low-level system configuration. "
             "Real-time command previews, dry-run checks, and detailed tooltips."
         )
-        subtitle.setStyleSheet("color: #9498a1; font-size: 11px;")
+        subtitle.setStyleSheet("color: #9198a1; font-size: 13px;")
         title_col.addWidget(subtitle)
 
         title_bar.addLayout(title_col, stretch=1)
@@ -159,7 +169,7 @@ class LauncherMainWindow(QMainWindow):
         container = QWidget()
         self.list_layout = QVBoxLayout(container)
         self.list_layout.setContentsMargins(2, 4, 6, 4)
-        self.list_layout.setSpacing(4)
+        self.list_layout.setSpacing(6)
 
         # Tool definitions: (string-key prefix, icon, launch callback)
         tools = [
@@ -202,55 +212,102 @@ class LauncherMainWindow(QMainWindow):
                 matches = True
             card.setVisible(matches)
 
-    def launch_device(self) -> None:
-        win = DeviceMainWindow()
+    def _open_tool_window(self, window_cls, title: str, subtitle: str) -> QMainWindow:
+        modal: LoadingModal | None = None
+        if self.isVisible():
+            modal = LoadingModal(
+                title=f"Opening {title}...",
+                subtitle=subtitle,
+                parent=self,
+            )
+            LoadingModal._active_instance = modal
+            modal.sync_to_parent()
+            modal.show()
+            modal.raise_()
+            QApplication.processEvents()
+
+        try:
+            win = window_cls()
+        finally:
+            if modal is not None:
+                if LoadingModal._active_instance is modal:
+                    LoadingModal._active_instance = None
+                modal.hide()
+                modal.deleteLater()
+
         win.show()
         self.windows.append(win)
+        return win
+
+    def launch_device(self) -> None:
+        self._open_tool_window(
+            DeviceMainWindow,
+            tr("tool_device_title"),
+            "Scanning PCI, USB, sysfs, and kernel driver modules...",
+        )
 
     def launch_fstab(self) -> None:
-        win = FstabMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            FstabMainWindow,
+            tr("tool_fstab_title"),
+            "Reading /etc/fstab mount table...",
+        )
 
     def launch_udev(self) -> None:
-        win = UdevMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            UdevMainWindow,
+            tr("tool_udev_title"),
+            "Loading udev rules and package ownership...",
+        )
 
     def launch_systemd(self) -> None:
-        win = SystemdMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            SystemdMainWindow,
+            tr("tool_systemd_title"),
+            "Querying systemd service units and timer schedules...",
+        )
 
     def launch_usermgmt(self) -> None:
-        win = UserMgmtMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            UserMgmtMainWindow,
+            tr("tool_usermgmt_title"),
+            "Reading /etc/passwd and /etc/group accounts...",
+        )
 
     def launch_sudoers(self) -> None:
-        win = SudoersMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            SudoersMainWindow,
+            tr("tool_sudoers_title"),
+            "Inspecting /etc/sudoers and /etc/sudoers.d rules...",
+        )
 
     def launch_journal(self) -> None:
-        win = JournalMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            JournalMainWindow,
+            tr("tool_journal_title"),
+            "Querying systemd-journald boot sessions and log entries...",
+        )
 
     def launch_sysctl(self) -> None:
-        win = SysctlMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            SysctlMainWindow,
+            tr("tool_sysctl_title"),
+            "Reading live kernel parameters from /proc/sys...",
+        )
 
     def launch_permissions(self) -> None:
-        win = PermissionsMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            PermissionsMainWindow,
+            tr("tool_permissions_title"),
+            "Inspecting POSIX ACLs and filesystem attributes...",
+        )
 
     def launch_bootloader(self) -> None:
-        win = BootloaderMainWindow()
-        win.show()
-        self.windows.append(win)
+        self._open_tool_window(
+            BootloaderMainWindow,
+            tr("tool_bootloader_title"),
+            "Detecting bootloader architecture and kernel parameters...",
+        )
 
 
 def main() -> None:

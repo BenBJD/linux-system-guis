@@ -1,15 +1,15 @@
-# Packaging & Distribution
+# Packaging and distribution
 
 ## 1. Arch Linux
 
-The PKGBUILD is designed to work standalone from the AUR and locally within this monorepo.
+The `PKGBUILD` works standalone from the AUR and locally within this monorepo.
 
 ### Prerequisites
 ```bash
 sudo pacman -S --needed base-devel python-build python-installer python-wheel python-hatchling python-pyqt6
 ```
 
-### Local Build
+### Local build
 ```bash
 ./packaging/build_arch.sh
 ```
@@ -23,38 +23,38 @@ sudo pacman -U packaging/arch/*.pkg.tar.zst
 
 ---
 
-## 2. Debian / Ubuntu / Linux Mint (.deb)
+## 2. Debian, Ubuntu, and Linux Mint (.deb)
 
 ### Prerequisites
 ```bash
 sudo apt install -y debhelper dh-python python3-all python3-pyqt6 python3-build python3-installer python3-hatchling
 ```
 
-### Build Package
+### Build package
 ```bash
 ./packaging/build_deb.sh
 ```
 
-This produces `linux-system-guis_*-*_all.deb`, which can be installed with:
+This produces `linux-system-guis_*-*_all.deb`, which you can install with:
 ```bash
 sudo dpkg -i packaging/debian/*.deb
 ```
 
 ---
 
-## 3. Fedora / RHEL / openSUSE (.rpm)
+## 3. Fedora, RHEL, and openSUSE (.rpm)
 
 ### Prerequisites
 ```bash
 sudo dnf install -y rpm-build python3-devel python3-pip python3-wheel python3-hatchling python3-installer python3-pyqt6
 ```
 
-### Build Package
+### Build package
 ```bash
 ./packaging/build_rpm.sh
 ```
 
-This produces `linux-system-guis-*-*_noarch.rpm`, which can be installed with:
+This produces `linux-system-guis-*-*_noarch.rpm`, which you can install with:
 ```bash
 sudo dnf install packaging/rpm/build/rpmbuild/RPMS/noarch/*.rpm
 ```
