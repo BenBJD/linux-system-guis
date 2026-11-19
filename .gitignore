@@ -24,16 +24,6 @@ packaging/arch/dist/
 packaging/arch/*.pkg.tar.*
 packaging/arch/*.tar.gz
 
-# Debian packaging
-debian/.debhelper/
-debian/linux-system-guis/
-debian/files
-debian/*.substvars
-debian/*.debhelper.log
-
-# RPM packaging
-build/rpmbuild/
-
 # Pytest & coverage cache
 .pytest_cache/
 .coverage

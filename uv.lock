@@ -174,6 +174,7 @@ version = "0.2.0"
 source = { editable = "apps/launcher" }
 dependencies = [
     { name = "bootloader-gui" },
+    { name = "device-gui" },
     { name = "fstab-gui" },
     { name = "journal-gui" },
     { name = "linux-gui-core" },
@@ -188,6 +189,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "bootloader-gui", editable = "apps/bootloader-gui" },
+    { name = "device-gui", editable = "apps/device-gui" },
     { name = "fstab-gui", editable = "apps/fstab-gui" },
     { name = "journal-gui", editable = "apps/journal-gui" },
     { name = "linux-gui-core", editable = "packages/core" },

@@ -34,13 +34,33 @@ Each tool in this suite previews every change before writing to disk:
 
 ## Installation
 
-See [packaging/README.md](packaging/README.md) for Arch Linux, Debian/Ubuntu, and Fedora/RHEL package build instructions.
+### Arch Linux (AUR)
 
-For local development, this project uses [uv](https://docs.astral.sh/uv/) for workspace management.
+Install from the AUR using your preferred helper:
+
+```bash
+yay -S linux-system-guis
+# or
+paru -S linux-system-guis
+```
+
+### Other distributions (`uv`)
+
+Requires `python>=3.12` and [uv](https://docs.astral.sh/uv/):
+
+```bash
+git clone https://github.com/BenBJD/linux-system-guis.git
+cd linux-system-guis
+uv tool install ./apps/launcher
+```
+
+This adds `linux-system-guis` to your `PATH`. You can also install any individual tool the same way (for example, `uv tool install ./apps/fstab-gui`).
+
+Example .desktop files are available in packaging/
 
 ## Contributing
 
-The defaults and tooltips come from manual pages and the Arch Wiki, but many are opinionated. Open an issue or pull request to suggest changes.
+The defaults and tooltips come from manual pages and the Arch Wiki, but many are opinionated. Please open an issue or pull request to suggest changes.
 
 ### Sync dependencies
 ```bash
