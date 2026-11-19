@@ -1,0 +1,103 @@
+name: Bump Version & Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.3.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  bump-and-tag:
+    name: Bump version to ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version format and tag availability
+        id: validate
+        env:
+          RAW_VERSION: ${{ inputs.version }}
+        run: |
+          VERSION="${RAW_VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version '$RAW_VERSION'. Expected semantic version like 0.3.0."
+            exit 1
+          fi
+          TAG="v$VERSION"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag '$TAG' already exists."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Update version references
+        env:
+          NEW_VERSION: ${{ steps.validate.outputs.version }}
+        run: |
+          python3 - <<'EOF'
+          import os
+          import re
+          from pathlib import Path
+
+          ver = os.environ["NEW_VERSION"]
+
+          def replace_in_file(path: Path, pattern: str, repl: str) -> None:
+              if not path.exists():
+                  return
+              text = path.read_text(encoding="utf-8")
+              updated = re.sub(pattern, repl, text, flags=re.MULTILINE)
+              if updated != text:
+                  path.write_text(updated, encoding="utf-8")
+                  print(f"Updated {path}")
+
+          pyproject_files = [
+              Path("pyproject.toml"),
+              *sorted(Path("packages").glob("*/pyproject.toml")),
+              *sorted(Path("apps").glob("*/pyproject.toml")),
+          ]
+          for path in pyproject_files:
+              replace_in_file(path, r'^version\s*=\s*"[^"]+"', f'version = "{ver}"')
+
+          init_files = [
+              *sorted(Path("packages").glob("*/src/*/__init__.py")),
+              *sorted(Path("apps").glob("*/src/*/__init__.py")),
+          ]
+          for path in init_files:
+              replace_in_file(path, r'^__version__\s*=\s*"[^"]+"', f'__version__ = "{ver}"')
+              
+          EOF
+
+      - name: Sync uv.lock
+        run: uv lock
+
+      - name: Commit and push version tag
+        env:
+          VERSION: ${{ steps.validate.outputs.version }}
+          TAG: ${{ steps.validate.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Bump version to $TAG"
+            git push origin HEAD
+          fi
+
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
